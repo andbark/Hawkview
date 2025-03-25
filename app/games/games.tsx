@@ -977,7 +977,7 @@ export default function Games() {
   // Format game data from Supabase
   const formatGameData = (game: any) => {
     // Parse wager amount from the game name if it follows our format
-    let customData = null;
+    let customData: { name: string; wagerAmount: number; } | undefined = undefined;
     
     if (game.name && game.name.includes('(Entry: $')) {
       try {
@@ -1056,7 +1056,7 @@ export default function Games() {
       winner: game.winner,
       notes: game.notes,
       winMethod: game.winMethod,
-      customData: customData
+      customData
     };
   };
   
