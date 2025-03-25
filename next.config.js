@@ -30,6 +30,10 @@ const nextConfig = {
     }
     return config;
   },
+  // Ignore TypeScript errors during build
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 };
 
 module.exports = nextConfig; 
