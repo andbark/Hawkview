@@ -67,8 +67,8 @@ export const loadLocalCompletedGames = (): Game[] => {
         
         // Merge with previously loaded games, preferring existing records
         // (since completedGames is more likely to have the latest state)
-        const existingIds = new Set(completedGames.map(g => g.id));
-        const newGames = localCompletedGames.filter(g => !existingIds.has(g.id));
+        const existingIds = new Set(completedGames.map((g: Game) => g.id));
+        const newGames = localCompletedGames.filter((g: Game) => !existingIds.has(g.id));
         
         // Add any new games found
         if (newGames.length > 0) {
