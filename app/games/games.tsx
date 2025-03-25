@@ -572,7 +572,7 @@ export default function Games() {
         gameFormData.name;
 
       // Convert players array to JSONB object with player IDs as keys
-      const playersObject = {};
+      const playersObject: Record<string, { name: string; bet: number }> = {};
       gameFormData.players.forEach(player => {
         playersObject[player.id] = {
           name: player.name,
@@ -834,7 +834,7 @@ export default function Games() {
         // For local games, update directly in localStorage
         try {
           const localGames = JSON.parse(localStorage.getItem('localGames') || '[]');
-          const updatedLocalGames = localGames.map(g => 
+          const updatedLocalGames = localGames.map((g: any) => 
             g.id === gameId ? {
               ...g,
               status: 'completed',
@@ -1173,7 +1173,7 @@ export default function Games() {
     toast.success(`Syncing ${failedGameUpdates.length + failedTransactions.length} pending updates...`);
     
     // Process failed game updates
-    const successfulGameUpdates = [];
+    const successfulGameUpdates: any[] = [];
     for (const update of failedGameUpdates) {
       try {
         // Attempt to update in Supabase
@@ -1202,7 +1202,7 @@ export default function Games() {
     }
     
     // Process failed transactions
-    const successfulTransactions = [];
+    const successfulTransactions: any[] = [];
     for (const transaction of failedTransactions) {
       try {
         // Attempt to insert transaction in Supabase
@@ -1249,14 +1249,14 @@ export default function Games() {
     // Remove successful updates from local storage
     if (successfulGameUpdates.length > 0) {
       const remainingGameUpdates = failedGameUpdates.filter(
-        update => !successfulGameUpdates.includes(update)
+        (update: any) => !successfulGameUpdates.includes(update)
       );
       localStorage.setItem('failedGameUpdates', JSON.stringify(remainingGameUpdates));
     }
     
     if (successfulTransactions.length > 0) {
       const remainingTransactions = failedTransactions.filter(
-        transaction => !successfulTransactions.includes(transaction)
+        (transaction: any) => !successfulTransactions.includes(transaction)
       );
       localStorage.setItem('failedTransactions', JSON.stringify(remainingTransactions));
     }
