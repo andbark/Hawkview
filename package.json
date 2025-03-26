@@ -29,6 +29,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "npm run clean-deps && next build",
+    "clean-deps": "rm -rf node_modules/.cache",
     "start": "next start",
     "lint": "next lint",
     "analyze": "cross-env ANALYZE=true next build",

@@ -1,0 +1,57 @@
+npm verbose cli /opt/homebrew/Cellar/node/23.9.0/bin/node /opt/homebrew/bin/npm
+npm info using npm@11.2.0
+npm info using node@v23.9.0
+npm verbose title npm run build
+npm verbose argv "run" "build" "--loglevel" "verbose"
+npm verbose logfile logs-max:10 dir:/Users/andrewbarksdale/.npm/_logs/2025-03-26T12_48_41_040Z-
+npm verbose logfile /Users/andrewbarksdale/.npm/_logs/2025-03-26T12_48_41_040Z-debug-0.log
+
+> bachelor-party@1.0.0 build
+> next build
+
+  ▲ Next.js 14.2.25
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Skipping validation of types
+   Linting ...
+   Collecting page data ...
+   Generating static pages (0/12) ...
+   Generating static pages (3/12) 
+   Generating static pages (6/12) 
+   Generating static pages (9/12) 
+ ✓ Generating static pages (12/12)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    141 B          87.5 kB
+├ ○ /_not-found                          141 B          87.5 kB
+├ ○ /admin                               447 B          87.8 kB
+├ ƒ /api/retroactive-game-processing     0 B                0 B
+├ ○ /game-history                        704 B          94.9 kB
+├ ○ /games                               2.28 kB        89.6 kB
+├ ƒ /games/[id]                          16.3 kB         149 kB
+├ ƒ /games/[id]/edit                     4.2 kB          137 kB
+├ ○ /leaderboard                         985 B          95.1 kB
+├ ○ /players                             855 B            95 kB
+├ ○ /test                                663 B            88 kB
+└ ○ /transactions                        787 B          94.9 kB
++ First Load JS shared by all            87.3 kB
+  ├ chunks/117-83cf95a5a26b041d.js       31.6 kB
+  ├ chunks/fd9d1056-5a7a0de88f0aca6d.js  53.7 kB
+  └ other shared chunks (total)          2.09 kB
+
+
+ƒ Middleware                             26.3 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+npm verbose cwd /Users/andrewbarksdale/Desktop/bachelor-party-dashboard
+npm verbose os Darwin 24.3.0
+npm verbose node v23.9.0
+npm verbose npm  v11.2.0
+npm verbose exit 0
+npm info ok
