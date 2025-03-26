@@ -30,8 +30,8 @@ export async function POST(request: Request) {
         name: name,
         type: type || 'other',
         status: 'active',
-        totalPot: totalPot,
-        startTime: Date.now(),
+        total_pot: totalPot,
+        start_time: Date.now(),
         players: {},
       })
       .select();
@@ -63,10 +63,10 @@ export async function POST(request: Request) {
         const { error: participantError } = await supabase
           .from('game_participants')
           .insert({
-            gameId: gameId,
-            playerId: player.playerId,
-            buyInAmount: player.buyIn,
-            joinedAt: new Date().toISOString()
+            game_id: gameId,
+            player_id: player.playerId,
+            buy_in_amount: player.buyIn,
+            joined_at: new Date().toISOString()
           });
         
         if (participantError) {
@@ -84,8 +84,8 @@ export async function POST(request: Request) {
         const { error: transactionError } = await supabase
           .from('transactions')
           .insert({
-            gameId: gameId,
-            playerId: player.playerId,
+            game_id: gameId,
+            player_id: player.playerId,
             amount: -player.buyIn,
             type: 'bet',
             timestamp: Date.now(),
