@@ -1,18 +1,26 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { logComponent, useComponentLogger } from '../lib/componentLogger';
 import AppNavigation from '../components/AppNavigation';
+import PlayerList from '../components/PlayerList';
+import CreatePlayerForm from '../components/CreatePlayerForm';
 import Link from 'next/link';
-import { UserGroupIcon } from '@heroicons/react/24/outline';
 
 export default function PlayersPage() {
+  const [refreshKey, setRefreshKey] = useState(0);
+  
   useEffect(() => {
     logComponent('PlayersPage');
   }, []);
   
   // Use the hook for component lifecycle logging
   useComponentLogger('PlayersPage');
+
+  // Force refresh player list after adding a new player
+  const handlePlayerCreated = () => {
+    setRefreshKey(prevKey => prevKey + 1);
+  };
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -23,19 +31,15 @@ export default function PlayersPage() {
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Players</h1>
           <p className="text-gray-600 mb-6">Manage player profiles and track balances</p>
           
-          <div className="bg-white p-8 rounded-lg border shadow-sm">
-            <div className="text-center py-12">
-              <UserGroupIcon className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <h2 className="text-2xl font-medium mb-2">No Players Yet</h2>
-              <p className="text-gray-500 mb-6">Players will appear here once created</p>
-              
-              <button className="bg-navy text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-block mr-4">
-                Add Player
-              </button>
-              
-              <Link href="/" className="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors inline-block">
-                Return Home
-              </Link>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Player list - takes 2/3 of the width on md screens */}
+            <div className="md:col-span-2">
+              <PlayerList key={refreshKey} />
+            </div>
+            
+            {/* Add player form - takes 1/3 of the width on md screens */}
+            <div>
+              <CreatePlayerForm onSuccess={handlePlayerCreated} />
             </div>
           </div>
         </div>

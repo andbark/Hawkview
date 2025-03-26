@@ -3,29 +3,27 @@
 import { useState, useEffect } from 'react';
 import { logComponent, useComponentLogger } from '../lib/componentLogger';
 import AppNavigation from '../components/AppNavigation';
+import GameList from '../components/GameList';
+import CreateGameForm from '../components/CreateGameForm';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { TrophyIcon } from '@heroicons/react/24/outline';
-
-// Use dynamic import to handle potential errors
-const Games = dynamic(() => import('./games'), {
-  loading: () => (
-    <div className="flex justify-center items-center h-64 bg-white">
-      <LoadingSpinner />
-    </div>
-  ),
-  ssr: false
-});
 
 export default function GamesPage() {
+  const [refreshKey, setRefreshKey] = useState(0);
+  
   useEffect(() => {
     logComponent('GamesPage');
   }, []);
   
   // Use the hook for component lifecycle logging
   useComponentLogger('GamesPage');
+
+  // Force refresh game list after adding a new game
+  const handleGameCreated = () => {
+    setRefreshKey(prevKey => prevKey + 1);
+  };
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -36,19 +34,15 @@ export default function GamesPage() {
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Games</h1>
           <p className="text-gray-600 mb-6">Create and manage your games</p>
           
-          <div className="bg-white p-8 rounded-lg border shadow-sm">
-            <div className="text-center py-12">
-              <TrophyIcon className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <h2 className="text-2xl font-medium mb-2">No Games Yet</h2>
-              <p className="text-gray-500 mb-6">Games will appear here once created</p>
-              
-              <button className="bg-navy text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-block mr-4">
-                Create Game
-              </button>
-              
-              <Link href="/" className="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors inline-block">
-                Return Home
-              </Link>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Game list - takes 2/3 of the width on md screens */}
+            <div className="md:col-span-2">
+              <GameList key={refreshKey} />
+            </div>
+            
+            {/* Add game form - takes 1/3 of the width on md screens */}
+            <div>
+              <CreateGameForm onSuccess={handleGameCreated} />
             </div>
           </div>
         </div>
