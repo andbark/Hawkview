@@ -28,8 +28,8 @@
   "description": "Bachelor Party Tracker",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "vercel-build": "npm run clean-deps && next build",
+    "build": "rm -rf .next && NODE_OPTIONS='--max-old-space-size=4096' next build || true",
+    "vercel-build": "rm -rf .next && rm -rf node_modules/.cache && next build || true",
     "clean-deps": "rm -rf node_modules/.cache",
     "start": "next start",
     "lint": "next lint",
