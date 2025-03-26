@@ -57,6 +57,13 @@ function NewGameForm() {
       try {
         setIsLoading(true);
         
+        // Check if supabase client is initialized
+        if (!supabase) {
+          console.error('Supabase client is not initialized');
+          setError('Database connection issue. Please refresh the page and try again.');
+          return;
+        }
+        
         const { data: players, error: playersError } = await supabase
           .from('players')
           .select('id, name, balance')
@@ -169,6 +176,9 @@ function NewGameForm() {
       setError(null);
       setIsSubmitting(true);
       
+      // Log environment information to help with debugging
+      console.log('Environment:', process.env.NODE_ENV);
+      
       // Basic validation
       if (!formData.name.trim()) {
         setError('Please enter a game name');
@@ -179,32 +189,55 @@ function NewGameForm() {
         setError('Please add at least one player to the game');
         return;
       }
+
+      // Validate supabase connection first
+      if (!supabase) {
+        console.error('Supabase client is not initialized');
+        setError('Database connection issue. Please refresh the page and try again.');
+        return;
+      }
+      
+      // Create a local reference to the non-null supabase client to satisfy TypeScript
+      const db = supabase;
+      
+      console.log('Creating new game with name:', formData.name);
+      console.log('Initial players:', formData.initialPlayers);
       
       // Create the game
-      const { data: gameData, error: gameError } = await supabase
+      const { data: gameData, error: gameError } = await db
         .from('games')
         .insert({
           name: formData.name,
           type: 'other', // Default type since we removed the type selection
           status: 'active',
-          potAmount: formData.initialPlayers.reduce((sum, p) => sum + p.buyIn, 0),
+          totalPot: formData.initialPlayers.reduce((sum, p) => sum + p.buyIn, 0),
+          startTime: Date.now(),
           createdAt: new Date().toISOString()
         })
         .select();
         
-      if (gameError) throw gameError;
+      if (gameError) {
+        console.error('Error creating game record:', gameError);
+        setError(`Failed to create game: ${gameError.message}`);
+        return;
+      }
       
       if (!gameData || gameData.length === 0) {
-        throw new Error('Failed to create game');
+        console.error('No game data returned after insert');
+        setError('Failed to create game: No data returned from database');
+        return;
       }
       
       const gameId = gameData[0].id;
+      console.log('Game created with ID:', gameId);
       setCreatedGameId(gameId);
       
       // Add all the initial players
       for (const player of formData.initialPlayers) {
+        console.log(`Adding player ${player.playerId} with buy-in ${player.buyIn} to game ${gameId}`);
+        
         // 1. Create a game_participants record
-        const { error: participantError } = await supabase
+        const { error: participantError } = await db
           .from('game_participants')
           .insert({
             gameId,
@@ -213,10 +246,14 @@ function NewGameForm() {
             joinedAt: new Date().toISOString()
           });
           
-        if (participantError) throw participantError;
+        if (participantError) {
+          console.error(`Error adding participant ${player.playerId}:`, participantError);
+          setError(`Failed to add player to game: ${participantError.message}`);
+          return;
+        }
         
         // 2. Create a transaction record for the buy-in
-        const { error: transactionError } = await supabase
+        const { error: transactionError } = await db
           .from('transactions')
           .insert({
             playerId: player.playerId,
@@ -227,19 +264,28 @@ function NewGameForm() {
             description: `Buy-in for ${formData.name}`
           });
           
-        if (transactionError) throw transactionError;
+        if (transactionError) {
+          console.error(`Error creating transaction for player ${player.playerId}:`, transactionError);
+          setError(`Failed to process transaction: ${transactionError.message}`);
+          return;
+        }
         
         // 3. Update player balance
-        const { error: playerUpdateError } = await supabase
+        const { error: playerUpdateError } = await db
           .from('players')
           .update({ 
-            balance: supabase.rpc('decrement', { x: player.buyIn })
+            balance: db.rpc('decrement', { x: player.buyIn })
           })
           .eq('id', player.playerId);
           
-        if (playerUpdateError) throw playerUpdateError;
+        if (playerUpdateError) {
+          console.error(`Error updating balance for player ${player.playerId}:`, playerUpdateError);
+          setError(`Failed to update player balance: ${playerUpdateError.message}`);
+          return;
+        }
       }
       
+      console.log('Game creation completed successfully');
       // Success!
       setSuccess(true);
       
