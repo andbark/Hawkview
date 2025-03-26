@@ -202,38 +202,13 @@ function NewGameForm() {
       
       console.log('Calling API with data:', requestData);
       
-      // Try our SQL endpoint first
+      // Try our new rebuild endpoint that uses the exact database column names
+      let response;
+      let result;
+      
       try {
-        // Helper function to handle successful result from any approach
-        const handleSuccessfulResult = (result: any) => {
-          if (!result.success || !result.gameId) {
-            throw new Error('Failed to create game: API returned unsuccessful response');
-          }
-          
-          // Store the game ID
-          const gameId = result.gameId;
-          setCreatedGameId(gameId);
-          
-          // Check if all players were added successfully
-          const failedPlayers = result.playerResults?.filter((p: any) => !p.success) || [];
-          if (failedPlayers.length > 0) {
-            console.warn('Some players were not added to the game:', failedPlayers);
-            setError(`Game created but failed to add ${failedPlayers.length} players. The game may be incomplete.`);
-            // We'll still consider this a success but with a warning
-          }
-          
-          // Success!
-          setSuccess(true);
-          
-          // After 1.5 seconds, redirect to the game page
-          setTimeout(() => {
-            router.push(`/games/${gameId}`);
-          }, 1500);
-        };
-        
-        // Try SQL-based game creation first
-        console.log('Trying SQL-based game creation approach...');
-        const sqlResponse = await fetch('/api/create-game-sql', {
+        console.log('Trying rebuilt API approach...');
+        response = await fetch('/api/create-game-rebuild', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -241,10 +216,21 @@ function NewGameForm() {
           body: JSON.stringify(requestData),
         });
         
-        if (!sqlResponse.ok) {
-          // If SQL approach fails, try direct API approach next
-          console.log('SQL approach failed, trying direct API approach...');
-          const directResponse = await fetch('/api/create-game-direct', {
+        result = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to create game via rebuild approach');
+        }
+        
+        console.log('Game created successfully via rebuild API:', result);
+        return handleSuccessfulResult(result);
+      } catch (rebuildError) {
+        console.error('Rebuild approach failed:', rebuildError);
+        
+        // Fallback to original approach
+        try {
+          console.log('Trying original approach as fallback...');
+          response = await fetch('/api/create-game', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -252,57 +238,44 @@ function NewGameForm() {
             body: JSON.stringify(requestData),
           });
           
-          if (!directResponse.ok) {
-            // If direct approach also fails, try original approach as final fallback
-            console.log('Direct approach also failed, trying original approach as final fallback...');
-            const fallbackResponse = await fetch('/api/create-game', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(requestData),
-            });
-            
-            if (!fallbackResponse.ok) {
-              // All approaches failed
-              let errorMessage = 'Failed to create game after trying all approaches';
-              try {
-                const errorData = await fallbackResponse.json();
-                if (errorData.error) {
-                  errorMessage = errorData.error;
-                }
-              } catch (e) {
-                console.error('Failed to parse error response:', e);
-              }
-              throw new Error(errorMessage);
-            }
-            
-            // Original approach succeeded
-            const result = await fallbackResponse.json();
-            console.log('Original approach succeeded:', result);
-            handleSuccessfulResult(result);
-            return;
+          result = await response.json();
+          
+          if (!response.ok) {
+            throw new Error(result.error || 'Failed to create game via original approach');
           }
           
-          // Direct approach succeeded
-          const result = await directResponse.json();
-          console.log('Direct approach succeeded:', result);
-          handleSuccessfulResult(result);
+          console.log('Game created successfully via original API:', result);
+          return handleSuccessfulResult(result);
+        } catch (originalError) {
+          console.error('All approaches failed:', originalError);
+          setError(`Error creating game: ${originalError instanceof Error ? originalError.message : 'Unknown error'}`);
         }
-        
-        // SQL approach succeeded
-        const result = await sqlResponse.json();
-        console.log('SQL approach succeeded:', result);
-        handleSuccessfulResult(result);
-      } catch (error) {
-        console.error('Error creating game via all approaches:', error);
-        setError(`Failed to create game: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Error in overall game creation process:', error);
-      setError('Failed to create game. Please try again.');
+      console.error('Unexpected error in handleSubmit:', error);
+      setError(`An unexpected error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Use a variable instead of function declaration to fix TypeScript error
+  const handleSuccessfulResult = (result: any) => {
+    if (result.gameId) {
+      setCreatedGameId(result.gameId);
+      setSuccess(true);
+
+      // Check if all players were successfully added
+      const failedPlayers = result.playerResults?.filter((p: any) => !p.success) || [];
+      if (failedPlayers.length > 0) {
+        console.warn('Some players failed to be added:', failedPlayers);
+        setError(`Game created, but ${failedPlayers.length} player(s) could not be added.`);
+      }
+
+      // Redirect after a short delay
+      setTimeout(() => {
+        router.push(`/games/${result.gameId}`);
+      }, 1500);
     }
   };
 
