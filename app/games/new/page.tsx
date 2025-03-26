@@ -210,15 +210,24 @@ function NewGameForm() {
           name: formData.name,
           type: 'other', // Default type since we removed the type selection
           status: 'active',
-          totalPot: formData.initialPlayers.reduce((sum, p) => sum + p.buyIn, 0),
-          startTime: Date.now(),
-          createdAt: new Date().toISOString()
+          total_pot: formData.initialPlayers.reduce((sum, p) => sum + p.buyIn, 0),
+          start_time: Date.now(),
+          created_at: new Date().toISOString()
         })
         .select();
         
       if (gameError) {
         console.error('Error creating game record:', gameError);
         setError(`Failed to create game: ${gameError.message}`);
+        // Log more details to help with debugging
+        console.error('Game data attempted to insert:', {
+          name: formData.name,
+          type: 'other',
+          status: 'active',
+          total_pot: formData.initialPlayers.reduce((sum, p) => sum + p.buyIn, 0),
+          start_time: Date.now(),
+          created_at: new Date().toISOString()
+        });
         return;
       }
       
@@ -240,10 +249,10 @@ function NewGameForm() {
         const { error: participantError } = await db
           .from('game_participants')
           .insert({
-            gameId,
-            playerId: player.playerId,
-            buyInAmount: player.buyIn,
-            joinedAt: new Date().toISOString()
+            game_id: gameId,
+            player_id: player.playerId,
+            buy_in_amount: player.buyIn,
+            joined_at: new Date().toISOString()
           });
           
         if (participantError) {
@@ -256,11 +265,11 @@ function NewGameForm() {
         const { error: transactionError } = await db
           .from('transactions')
           .insert({
-            playerId: player.playerId,
+            player_id: player.playerId,
             amount: -player.buyIn, // Negative because player is spending money
             type: 'bet',
-            gameId,
-            timestamp: new Date().toISOString(),
+            game_id: gameId,
+            timestamp: Date.now(),
             description: `Buy-in for ${formData.name}`
           });
           
@@ -281,6 +290,12 @@ function NewGameForm() {
         if (playerUpdateError) {
           console.error(`Error updating balance for player ${player.playerId}:`, playerUpdateError);
           setError(`Failed to update player balance: ${playerUpdateError.message}`);
+          // Additional details to help with debugging
+          console.error('Player balance update details:', {
+            player_id: player.playerId,
+            buy_in: player.buyIn,
+            decrement_function: 'Using RPC "decrement" with parameter x'
+          });
           return;
         }
       }
