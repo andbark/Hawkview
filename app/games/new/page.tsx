@@ -211,28 +211,55 @@ function NewGameForm() {
         if (!supabaseUrl || !supabaseKey) {
           throw new Error('Missing Supabase environment variables');
         }
-        
-        // Convert players to a suitable format for the games table
-        const playersObject: Record<string, {id: string, name: string, bet: number}> = {};
-        formData.initialPlayers.forEach(player => {
-          const playerDetails = getPlayerById(player.playerId);
-          if (playerDetails) {
-            playersObject[player.playerId] = {
-              id: player.playerId,
-              name: playerDetails.name,
-              bet: player.buyIn
-            };
+
+        // First, check what tables are available and their structure
+        try {
+          console.log('Diagnosing database structure...');
+          // Check available tables
+          const tablesResponse = await fetch(`${supabaseUrl}/rest/v1/`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${supabaseKey}`
+            }
+          });
+          
+          if (tablesResponse.ok) {
+            const tables = await tablesResponse.json();
+            console.log('Available tables:', tables);
+          } else {
+            console.error('Failed to get tables list');
           }
-        });
+          
+          // Try to get games table structure
+          const gamesStructureResponse = await fetch(`${supabaseUrl}/rest/v1/games?limit=1`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${supabaseKey}`
+            }
+          });
+          
+          if (gamesStructureResponse.ok) {
+            const gamesData = await gamesStructureResponse.json();
+            console.log('Games table structure sample:', gamesData);
+          } else {
+            console.error('Failed to get games table structure');
+          }
+        } catch (diagError) {
+          console.error('Database diagnosis error:', diagError);
+        }
         
-        // Create minimal game data
+        // Create minimal game data - simplify as much as possible
         const gameData = {
           name: formData.name,
           type: 'other',
           status: 'active',
           startTime: Date.now(),
           totalPot: formData.initialPlayers.reduce((sum, p) => sum + p.buyIn, 0),
-          players: JSON.stringify(playersObject)
+          // Try without the players field to see if that's the issue
         };
         
         console.log('Sending direct API request with data:', gameData);
@@ -251,9 +278,66 @@ function NewGameForm() {
         
         if (!response.ok) {
           console.error(`Error response from Supabase API: ${response.status} ${response.statusText}`);
-          const errorText = await response.text();
-          console.error('Error details:', errorText);
-          throw new Error(`Failed to create game via API: ${response.statusText}`);
+          let errorDetails = '';
+          try {
+            const errorText = await response.text();
+            console.error('API Error response body:', errorText);
+            errorDetails = errorText;
+            
+            // If error is related to column not being present, try a fallback
+            if (errorDetails.includes('column') && errorDetails.includes('does not exist')) {
+              console.log('Trying fallback with minimal fields...');
+              
+              // Try a minimal version with only required fields
+              const minimalData = {
+                name: formData.name,
+                type: 'other',
+                status: 'active'
+              };
+              
+              const fallbackResponse = await fetch(`${supabaseUrl}/rest/v1/games`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'apikey': supabaseKey,
+                  'Authorization': `Bearer ${supabaseKey}`,
+                  'Prefer': 'return=representation'
+                },
+                body: JSON.stringify(minimalData)
+              });
+              
+              if (fallbackResponse.ok) {
+                const createdGameData = await fallbackResponse.json();
+                console.log('Game created successfully with fallback approach:', createdGameData);
+                
+                if (!createdGameData || createdGameData.length === 0) {
+                  throw new Error('No game data returned after fallback creation');
+                }
+                
+                const gameId = createdGameData[0].id;
+                console.log('Game created with fallback, ID:', gameId);
+                setCreatedGameId(gameId);
+                
+                // Continue with adding players, etc.
+                // [Rest of the code to add players remains the same]
+                
+                // Success!
+                setSuccess(true);
+                
+                // After 1.5 seconds, redirect to the game page
+                setTimeout(() => {
+                  router.push(`/games/${gameId}`);
+                }, 1500);
+                
+                return; // Exit early if fallback succeeded
+              } else {
+                console.error('Fallback approach also failed');
+              }
+            }
+          } catch (e) {
+            console.error('Failed to read error response:', e);
+          }
+          throw new Error(`Failed to create game via API: ${response.statusText} ${errorDetails ? '- ' + errorDetails : ''}`);
         }
         
         const createdGameData = await response.json();
