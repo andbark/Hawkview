@@ -568,7 +568,7 @@ export default function Games() {
       id: crypto.randomUUID(),
       name: gameFormData.name,
       type: gameFormData.type,
-      status: 'active' as const,
+      status: 'active' as 'active' | 'completed' | 'cancelled',
       startTime: Date.now(),
       totalPot: gameFormData.totalPot,
       players: gameFormData.players,
@@ -662,7 +662,7 @@ export default function Games() {
               id: gameId,
               name: gameName,
               type: gameFormData.type,
-              status: 'active',
+              status: 'active' as 'active' | 'completed' | 'cancelled',
               startTime: Date.now(),
               totalPot: gameFormData.totalPot,
               players: playersArray, // Store as array, not as object
@@ -1004,11 +1004,12 @@ export default function Games() {
       endTime: game.endTime,
       players: game.players || [],
       totalPot: game.totalPot || 0,
-      status: game.status || 'active',
+      status: (game.status as 'active' | 'completed' | 'cancelled') || 'active',
       winner: game.winner,
       notes: game.notes,
       winMethod: game.winMethod,
-      customData: game.customData
+      customData: game.customData,
+      createdLocally: game.createdLocally
     };
   };
   
