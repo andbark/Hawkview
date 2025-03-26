@@ -16,27 +16,30 @@ export default function Home() {
   
   // Collect diagnostic information when running in the browser
   useEffect(() => {
-    const buildInfo = {
-      hydrated: true,
-      nextInfo: {
-        version: (window as any).__NEXT_DATA__?.buildId || 'unknown',
-        runtime: (window as any).__NEXT_RUNTIME || 'unknown'
-      },
-      windowSize: {
-        width: window.innerWidth,
-        height: window.innerHeight
-      },
-      url: window.location.href,
-      userAgent: navigator.userAgent
-    };
-    
-    setDebugInfo(buildInfo);
-    
-    // Log connectivity to Supabase
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      console.log('🔌 Supabase URL configured:', process.env.NEXT_PUBLIC_SUPABASE_URL.substring(0, 20) + '...');
-    } else {
-      console.error('❌ Supabase URL not configured');
+    // Only run this code on the client side
+    if (typeof window !== 'undefined') {
+      const buildInfo = {
+        hydrated: true,
+        nextInfo: {
+          version: (window as any).__NEXT_DATA__?.buildId || 'unknown',
+          runtime: (window as any).__NEXT_RUNTIME || 'unknown'
+        },
+        windowSize: {
+          width: window.innerWidth,
+          height: window.innerHeight
+        },
+        url: window.location.href,
+        userAgent: navigator.userAgent
+      };
+      
+      setDebugInfo(buildInfo);
+      
+      // Log connectivity to Supabase
+      if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+        console.log('🔌 Supabase URL configured:', process.env.NEXT_PUBLIC_SUPABASE_URL.substring(0, 20) + '...');
+      } else {
+        console.error('❌ Supabase URL not configured');
+      }
     }
   }, []);
 
@@ -65,7 +68,8 @@ export default function Home() {
       </div>
       
       {/* Diagnostic information (hidden in production unless debug param is present) */}
-      {(process.env.NODE_ENV !== 'production' || window?.location?.search.includes('debug=true')) && (
+      {typeof window !== 'undefined' && 
+        (process.env.NODE_ENV !== 'production' || window?.location?.search.includes('debug=true')) && (
         <div className="w-full max-w-4xl p-4 bg-gray-100 rounded-lg text-xs font-mono mt-8">
           <h3 className="font-bold mb-2">Debug Information:</h3>
           <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
