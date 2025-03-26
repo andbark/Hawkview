@@ -2,56 +2,32 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { ChartBarIcon, TrophyIcon, ArrowSmallUpIcon, ArrowSmallDownIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
 import LoadingSpinner from './LoadingSpinner';
 import Link from 'next/link';
 
+// Simplified player interface with only essential properties
 interface Player {
   id: string;
   name: string;
   colorScheme: string;
   balance: number;
-  wins: number;
-  losses: number;
-  totalGames: number;
-  biggestWin: number;
-  biggestLoss: number;
-  gamesPlayed: number;
-  gameTypes: { [key: string]: number };
-}
-
-interface Transaction {
-  playerId: string;
-  type: string;
-  amount: number;
-  count: string;
-  gameType?: string;
 }
 
 export default function LeaderboardTable() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showExtendedStats, setShowExtendedStats] = useState(false);
 
   useEffect(() => {
-    const fetchLeaderboard = async () => {
+    const fetchPlayers = async () => {
       try {
         setLoading(true);
         
-        // Check if supabase client is properly initialized
-        if (!supabase || !supabase.from) {
-          console.error('Supabase client not properly initialized:', supabase);
-          throw new Error('Database connection not available');
-        }
-        
-        // Add a short delay to ensure Supabase client is initialized
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Get players with their balances
+        // Simple query to just get player data
         const { data: playerData, error: playerError } = await supabase
           .from('players')
-          .select('*')
+          .select('id, name, colorScheme, balance')
           .order('balance', { ascending: false });
           
         if (playerError) {
@@ -64,167 +40,50 @@ export default function LeaderboardTable() {
           return;
         }
         
-        // Get all transactions to calculate statistics
-        const { data: transactionData, error: transactionError } = await supabase
-          .from('transactions')
-          .select(`
-            playerId, 
-            type, 
-            amount,
-            games(type)
-          `)
-          .in('type', ['win', 'loss', 'bet']);
-          
-        if (transactionError) {
-          console.error('Transaction query error:', transactionError);
-          throw transactionError;
-        }
+        // Map the data with safe defaults
+        const safePlayers = playerData.map(player => ({
+          id: player.id,
+          name: player.name || 'Unnamed Player',
+          colorScheme: player.colorScheme || 'blue',
+          balance: typeof player.balance === 'number' ? player.balance : 0
+        }));
         
-        // Get game participation data
-        const { data: participationData, error: participationError } = await supabase
-          .from('game_participants')
-          .select(`
-            playerId,
-            games(id, type)
-          `);
-          
-        if (participationError) {
-          console.error('Participation query error:', participationError);
-          throw participationError;
-        }
-        
-        // Process and combine the data
-        const enhancedPlayers = playerData.map(player => {
-          try {
-            // Filter transactions for this player
-            const playerTransactions = transactionData?.filter(t => t.playerId === player.id) || [];
-            
-            // Calculate wins and losses
-            const wins = playerTransactions.filter(t => t.type === 'win');
-            const losses = playerTransactions.filter(t => t.type === 'loss');
-            
-            // Find biggest win and loss
-            const winAmounts = wins.map(w => w.amount || 0).filter(amount => !isNaN(amount));
-            const lossAmounts = losses.map(l => l.amount || 0).filter(amount => !isNaN(amount));
-            const biggestWin = winAmounts.length > 0 ? Math.max(...winAmounts) : 0;
-            const biggestLoss = lossAmounts.length > 0 ? Math.min(...lossAmounts) : 0;
-            
-            // Count games played and track game types
-            const playerParticipation = participationData?.filter(p => p.playerId === player.id) || [];
-            const gameTypes: { [key: string]: number } = {};
-            
-            // Safely handle the games data without assuming its exact structure
-            playerParticipation.forEach(p => {
-              try {
-                // Access games data in a type-safe way, extracting the game type when available
-                const gameData = p.games as any;
-                // Default to 'unknown' if structure isn't as expected
-                const gameType = gameData && typeof gameData === 'object' && gameData.type 
-                  ? gameData.type 
-                  : 'unknown';
-                
-                gameTypes[gameType] = (gameTypes[gameType] || 0) + 1;
-              } catch (e) {
-                console.warn('Error processing game participant data:', e);
-                // Skip this game if we can't process it
-              }
-            });
-            
-            return {
-              id: player.id,
-              name: player.name || 'Unnamed Player',
-              colorScheme: player.colorScheme || 'blue',
-              balance: typeof player.balance === 'number' ? player.balance : 0,
-              wins: wins.length,
-              losses: losses.length,
-              totalGames: wins.length + losses.length,
-              biggestWin,
-              biggestLoss: Math.abs(biggestLoss), // Convert to positive for display
-              gamesPlayed: playerParticipation.length,
-              gameTypes
-            };
-          } catch (e) {
-            console.error('Error enhancing player data:', e);
-            // Return a minimal but valid player object to avoid breaking the component
-            return {
-              id: player.id || 'unknown',
-              name: player.name || 'Error: Player Data',
-              colorScheme: 'gray',
-              balance: 0,
-              wins: 0,
-              losses: 0,
-              totalGames: 0,
-              biggestWin: 0,
-              biggestLoss: 0,
-              gamesPlayed: 0,
-              gameTypes: {}
-            };
-          }
-        });
-        
-        // Sort by balance descending
-        enhancedPlayers.sort((a, b) => b.balance - a.balance);
-        
-        setPlayers(enhancedPlayers);
+        setPlayers(safePlayers);
       } catch (error) {
-        console.error('Error fetching leaderboard:', error);
-        if (error instanceof Error) {
-          console.error('Error details:', {
-            name: error.name,
-            message: error.message,
-            stack: error.stack
-          });
-        }
+        console.error('Error fetching players:', error);
         setError('Failed to load leaderboard. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
     
-    const fetchLeaderboardWithRetry = async (retries = 1) => {
+    // Fetch player data with a retry mechanism
+    const fetchWithRetry = async (retries = 1) => {
       try {
-        await fetchLeaderboard();
+        await fetchPlayers();
       } catch (error) {
         console.error(`Fetch attempt failed, retries left: ${retries}`);
         if (retries > 0) {
-          console.log('Retrying in 2 seconds...');
-          setTimeout(() => fetchLeaderboardWithRetry(retries - 1), 2000);
+          setTimeout(() => fetchWithRetry(retries - 1), 2000);
         } else {
-          console.error('All retry attempts failed');
-          setError('Failed to load leaderboard after multiple attempts. Please try again later.');
+          setError('Failed to load players after multiple attempts.');
           setLoading(false);
         }
       }
     };
     
-    fetchLeaderboardWithRetry();
+    fetchWithRetry();
     
-    // Set up subscription to refresh when player or transaction data changes
+    // Set up subscription for player data changes
     const playerChanges = supabase
       .channel('leaderboard_players')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => {
-        fetchLeaderboard();
-      })
-      .subscribe();
-      
-    const transactionChanges = supabase
-      .channel('leaderboard_transactions')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
-        fetchLeaderboard();
-      })
-      .subscribe();
-      
-    const gameParticipantsChanges = supabase
-      .channel('leaderboard_game_participants')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'game_participants' }, () => {
-        fetchLeaderboard();
+        fetchPlayers();
       })
       .subscribe();
       
     return () => {
       supabase.removeChannel(playerChanges);
-      supabase.removeChannel(transactionChanges);
-      supabase.removeChannel(gameParticipantsChanges);
     };
   }, []);
 
@@ -241,7 +100,6 @@ export default function LeaderboardTable() {
     const validColors = ['blue', 'red', 'green', 'yellow', 'purple', 'pink', 'indigo', 'gray'];
     const defaultColor = 'blue';
     
-    // If the color is valid, use it; otherwise use default
     const color = validColors.includes(colorScheme) ? colorScheme : defaultColor;
     return `bg-${color}-500`;
   };
@@ -274,14 +132,8 @@ export default function LeaderboardTable() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
+      <div className="mb-4">
         <h2 className="text-lg font-medium text-gray-800">Player Rankings</h2>
-        <button 
-          onClick={() => setShowExtendedStats(!showExtendedStats)}
-          className="text-sm text-navy hover:text-blue-700"
-        >
-          {showExtendedStats ? 'Hide Details' : 'Show Details'}
-        </button>
       </div>
 
       <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg mb-6">
@@ -297,76 +149,28 @@ export default function LeaderboardTable() {
               <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">
                 Balance
               </th>
-              <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900">
-                Wins
-              </th>
-              <th scope="col" className="px-3 py-3.5 text-center text-sm font-semibold text-gray-900">
-                Losses
-              </th>
-              <th scope="col" className="px-3 py-3.5 text-right text-sm font-semibold text-gray-900 sm:pr-6">
-                Win Rate
-              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
             {players.map((player, index) => (
-              <React.Fragment key={player.id}>
-                <tr className={index === 0 ? 'bg-yellow-50' : ''}>
-                  <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
-                    <div className="flex items-center">
-                      {index === 0 && <TrophyIcon className="h-5 w-5 text-amber-500 mr-1" />}
-                      <span className={index === 0 ? 'font-bold' : ''}>{index + 1}</span>
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-                    <div className="flex items-center">
-                      <div className={`w-2 h-10 mr-3 ${getColorClass(player.colorScheme)} rounded-full`}></div>
-                      <Link href={`/players/${player.id}`} className="hover:underline">
-                        {player.name}
-                      </Link>
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-right font-medium">
-                    <span className={player.balance >= 0 ? 'text-green-600' : 'text-red-600'}>
-                      {formatCurrency(player.balance)}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-center text-green-600">
-                    {player.wins}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-center text-red-600">
-                    {player.losses}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-right sm:pr-6">
-                    {player.totalGames > 0 
-                      ? `${Math.round((player.wins / player.totalGames) * 100)}%`
-                      : '0%'
-                    }
-                  </td>
-                </tr>
-                
-                {/* Extended stats row, shown when showExtendedStats is true */}
-                {showExtendedStats && (
-                  <tr className="bg-gray-50">
-                    <td colSpan={6} className="px-3 py-4">
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <p className="text-gray-500">Games Played</p>
-                          <p className="font-medium">{player.gamesPlayed}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500">Biggest Win</p>
-                          <p className="font-medium text-green-600">{formatCurrency(player.biggestWin)}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500">Biggest Loss</p>
-                          <p className="font-medium text-red-600">{formatCurrency(player.biggestLoss)}</p>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </React.Fragment>
+              <tr key={player.id} className={index === 0 ? 'bg-yellow-50' : ''}>
+                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                  <span className={index === 0 ? 'font-bold' : ''}>{index + 1}</span>
+                </td>
+                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
+                  <div className="flex items-center">
+                    <div className={`w-2 h-10 mr-3 ${getColorClass(player.colorScheme)} rounded-full`}></div>
+                    <Link href={`/players/${player.id}`} className="hover:underline">
+                      {player.name}
+                    </Link>
+                  </div>
+                </td>
+                <td className="whitespace-nowrap px-3 py-4 text-sm text-right font-medium">
+                  <span className={player.balance >= 0 ? 'text-green-600' : 'text-red-600'}>
+                    {formatCurrency(player.balance)}
+                  </span>
+                </td>
+              </tr>
             ))}
           </tbody>
         </table>
@@ -379,7 +183,6 @@ export default function LeaderboardTable() {
             <h3 className="font-medium text-blue-800 mb-1">How the leaderboard works</h3>
             <p className="text-sm text-blue-700">
               Players are ranked by their total balance. Balances update in real-time as games are played and completed.
-              Win rate is calculated based on the number of wins divided by total games (wins + losses).
             </p>
           </div>
         </div>
