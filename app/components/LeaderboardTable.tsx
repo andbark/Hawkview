@@ -39,13 +39,25 @@ export default function LeaderboardTable() {
       try {
         setLoading(true);
         
+        // Check if supabase client is properly initialized
+        if (!supabase || !supabase.from) {
+          console.error('Supabase client not properly initialized:', supabase);
+          throw new Error('Database connection not available');
+        }
+        
+        // Add a short delay to ensure Supabase client is initialized
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         // Get players with their balances
         const { data: playerData, error: playerError } = await supabase
           .from('players')
           .select('*')
           .order('balance', { ascending: false });
           
-        if (playerError) throw playerError;
+        if (playerError) {
+          console.error('Player query error:', playerError);
+          throw playerError;
+        }
         
         if (!playerData) {
           setPlayers([]);
@@ -63,7 +75,10 @@ export default function LeaderboardTable() {
           `)
           .in('type', ['win', 'loss', 'bet']);
           
-        if (transactionError) throw transactionError;
+        if (transactionError) {
+          console.error('Transaction query error:', transactionError);
+          throw transactionError;
+        }
         
         // Get game participation data
         const { data: participationData, error: participationError } = await supabase
@@ -73,52 +88,78 @@ export default function LeaderboardTable() {
             games(id, type)
           `);
           
-        if (participationError) throw participationError;
+        if (participationError) {
+          console.error('Participation query error:', participationError);
+          throw participationError;
+        }
         
         // Process and combine the data
         const enhancedPlayers = playerData.map(player => {
-          // Filter transactions for this player
-          const playerTransactions = transactionData?.filter(t => t.playerId === player.id) || [];
-          
-          // Calculate wins and losses
-          const wins = playerTransactions.filter(t => t.type === 'win');
-          const losses = playerTransactions.filter(t => t.type === 'loss');
-          
-          // Find biggest win and loss
-          const winAmounts = wins.map(w => w.amount || 0);
-          const lossAmounts = losses.map(l => l.amount || 0);
-          const biggestWin = winAmounts.length > 0 ? Math.max(...winAmounts) : 0;
-          const biggestLoss = lossAmounts.length > 0 ? Math.min(...lossAmounts) : 0;
-          
-          // Count games played and track game types
-          const playerParticipation = participationData?.filter(p => p.playerId === player.id) || [];
-          const gameTypes: { [key: string]: number } = {};
-          
-          // Safely handle the games data without assuming its exact structure
-          playerParticipation.forEach(p => {
-            // Access games data in a type-safe way, extracting the game type when available
-            const gameData = p.games as any;
-            // Default to 'unknown' if structure isn't as expected
-            const gameType = gameData && typeof gameData === 'object' && gameData.type 
-              ? gameData.type 
-              : 'unknown';
+          try {
+            // Filter transactions for this player
+            const playerTransactions = transactionData?.filter(t => t.playerId === player.id) || [];
             
-            gameTypes[gameType] = (gameTypes[gameType] || 0) + 1;
-          });
-          
-          return {
-            id: player.id,
-            name: player.name,
-            colorScheme: player.colorScheme || 'blue',
-            balance: player.balance,
-            wins: wins.length,
-            losses: losses.length,
-            totalGames: wins.length + losses.length,
-            biggestWin,
-            biggestLoss: Math.abs(biggestLoss), // Convert to positive for display
-            gamesPlayed: playerParticipation.length,
-            gameTypes
-          };
+            // Calculate wins and losses
+            const wins = playerTransactions.filter(t => t.type === 'win');
+            const losses = playerTransactions.filter(t => t.type === 'loss');
+            
+            // Find biggest win and loss
+            const winAmounts = wins.map(w => w.amount || 0).filter(amount => !isNaN(amount));
+            const lossAmounts = losses.map(l => l.amount || 0).filter(amount => !isNaN(amount));
+            const biggestWin = winAmounts.length > 0 ? Math.max(...winAmounts) : 0;
+            const biggestLoss = lossAmounts.length > 0 ? Math.min(...lossAmounts) : 0;
+            
+            // Count games played and track game types
+            const playerParticipation = participationData?.filter(p => p.playerId === player.id) || [];
+            const gameTypes: { [key: string]: number } = {};
+            
+            // Safely handle the games data without assuming its exact structure
+            playerParticipation.forEach(p => {
+              try {
+                // Access games data in a type-safe way, extracting the game type when available
+                const gameData = p.games as any;
+                // Default to 'unknown' if structure isn't as expected
+                const gameType = gameData && typeof gameData === 'object' && gameData.type 
+                  ? gameData.type 
+                  : 'unknown';
+                
+                gameTypes[gameType] = (gameTypes[gameType] || 0) + 1;
+              } catch (e) {
+                console.warn('Error processing game participant data:', e);
+                // Skip this game if we can't process it
+              }
+            });
+            
+            return {
+              id: player.id,
+              name: player.name || 'Unnamed Player',
+              colorScheme: player.colorScheme || 'blue',
+              balance: typeof player.balance === 'number' ? player.balance : 0,
+              wins: wins.length,
+              losses: losses.length,
+              totalGames: wins.length + losses.length,
+              biggestWin,
+              biggestLoss: Math.abs(biggestLoss), // Convert to positive for display
+              gamesPlayed: playerParticipation.length,
+              gameTypes
+            };
+          } catch (e) {
+            console.error('Error enhancing player data:', e);
+            // Return a minimal but valid player object to avoid breaking the component
+            return {
+              id: player.id || 'unknown',
+              name: player.name || 'Error: Player Data',
+              colorScheme: 'gray',
+              balance: 0,
+              wins: 0,
+              losses: 0,
+              totalGames: 0,
+              biggestWin: 0,
+              biggestLoss: 0,
+              gamesPlayed: 0,
+              gameTypes: {}
+            };
+          }
         });
         
         // Sort by balance descending
@@ -127,13 +168,36 @@ export default function LeaderboardTable() {
         setPlayers(enhancedPlayers);
       } catch (error) {
         console.error('Error fetching leaderboard:', error);
+        if (error instanceof Error) {
+          console.error('Error details:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+          });
+        }
         setError('Failed to load leaderboard. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
     
-    fetchLeaderboard();
+    const fetchLeaderboardWithRetry = async (retries = 1) => {
+      try {
+        await fetchLeaderboard();
+      } catch (error) {
+        console.error(`Fetch attempt failed, retries left: ${retries}`);
+        if (retries > 0) {
+          console.log('Retrying in 2 seconds...');
+          setTimeout(() => fetchLeaderboardWithRetry(retries - 1), 2000);
+        } else {
+          console.error('All retry attempts failed');
+          setError('Failed to load leaderboard after multiple attempts. Please try again later.');
+          setLoading(false);
+        }
+      }
+    };
+    
+    fetchLeaderboardWithRetry();
     
     // Set up subscription to refresh when player or transaction data changes
     const playerChanges = supabase
