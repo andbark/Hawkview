@@ -54,8 +54,18 @@ export default function GameList() {
     try {
       setLoading(true);
       
+      // Check if supabase client is properly initialized
+      if (!supabase || !supabase.from) {
+        console.error('Supabase client not properly initialized:', supabase);
+        setError('Database connection not available. Please try refreshing the page.');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Fetching games...');
+      
       // Get games with player count and winner info
-      const { data, error } = await supabase
+      const { data, error, status } = await supabase
         .from('games')
         .select(`
           *,
@@ -64,25 +74,74 @@ export default function GameList() {
         `)
         .order('createdAt', { ascending: false });
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching games:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          httpStatus: status
+        });
+        throw error;
+      }
+      
+      if (!data) {
+        console.warn('No game data returned from Supabase');
+        setGames([]);
+        setLoading(false);
+        return;
+      }
+      
+      console.log(`Successfully fetched ${data.length} games`);
       
       // Format the data
-      const formattedGames = data?.map(game => ({
-        id: game.id,
-        name: game.name,
-        type: game.type,
-        status: game.status,
-        createdAt: game.createdAt,
-        updatedAt: game.updatedAt,
-        totalPlayers: game.participants?.[0]?.count || 0,
-        potAmount: game.potAmount || 0,
-        winner: game.winner?.name || null
-      })) || [];
+      const formattedGames = data.map(game => {
+        try {
+          return {
+            id: game.id,
+            name: game.name || 'Unnamed Game',
+            type: game.type || 'Unknown',
+            status: game.status || 'unknown',
+            createdAt: game.createdAt,
+            updatedAt: game.updatedAt,
+            totalPlayers: game.participants?.[0]?.count || 0,
+            potAmount: game.potAmount || 0,
+            winner: game.winner?.name || null
+          };
+        } catch (err) {
+          console.error('Error formatting game data:', err, 'Game object:', game);
+          // Return a minimal valid game object to prevent breaking the UI
+          return {
+            id: game.id || 'unknown-id',
+            name: 'Error: Malformed Game Data',
+            type: 'Unknown',
+            status: 'unknown',
+            createdAt: new Date().toISOString(),
+            updatedAt: null,
+            totalPlayers: 0,
+            potAmount: 0,
+            winner: null
+          };
+        }
+      });
       
       setGames(formattedGames);
     } catch (error) {
       console.error('Error fetching games:', error);
+      if (error instanceof Error) {
+        console.error('Error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        });
+      }
       setError('Failed to load games. Please try again later.');
+      
+      // Try to fetch games again after a delay (only once)
+      setTimeout(() => {
+        console.log('Retrying game fetch after error...');
+        fetchGames();
+      }, 3000);
     } finally {
       setLoading(false);
     }

@@ -18,61 +18,11 @@ export default function LeaderboardTable() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
 
   useEffect(() => {
-    const fetchPlayers = async () => {
-      try {
-        setLoading(true);
-        
-        // Simple query to just get player data
-        const { data: playerData, error: playerError } = await supabase
-          .from('players')
-          .select('id, name, colorScheme, balance')
-          .order('balance', { ascending: false });
-          
-        if (playerError) {
-          console.error('Player query error:', playerError);
-          throw playerError;
-        }
-        
-        if (!playerData) {
-          setPlayers([]);
-          return;
-        }
-        
-        // Map the data with safe defaults
-        const safePlayers = playerData.map(player => ({
-          id: player.id,
-          name: player.name || 'Unnamed Player',
-          colorScheme: player.colorScheme || 'blue',
-          balance: typeof player.balance === 'number' ? player.balance : 0
-        }));
-        
-        setPlayers(safePlayers);
-      } catch (error) {
-        console.error('Error fetching players:', error);
-        setError('Failed to load leaderboard. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    // Fetch player data with a retry mechanism
-    const fetchWithRetry = async (retries = 1) => {
-      try {
-        await fetchPlayers();
-      } catch (error) {
-        console.error(`Fetch attempt failed, retries left: ${retries}`);
-        if (retries > 0) {
-          setTimeout(() => fetchWithRetry(retries - 1), 2000);
-        } else {
-          setError('Failed to load players after multiple attempts.');
-          setLoading(false);
-        }
-      }
-    };
-    
-    fetchWithRetry();
+    fetchPlayers();
     
     // Set up subscription for player data changes
     const playerChanges = supabase
@@ -86,6 +36,107 @@ export default function LeaderboardTable() {
       supabase.removeChannel(playerChanges);
     };
   }, []);
+
+  const fetchPlayers = async () => {
+    try {
+      setLoading(true);
+      
+      // Debug output for troubleshooting
+      console.log(`Fetching players (attempt ${retryCount + 1}/${maxRetries + 1})...`);
+      
+      // Check if supabase client is properly initialized
+      if (!supabase || !supabase.from) {
+        console.error('Supabase client not properly initialized:', supabase);
+        throw new Error('Database connection not available');
+      }
+      
+      // Check environment variables (without revealing sensitive data)
+      const hasSupabaseUrl = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const hasSupabaseKey = !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      
+      console.log('Environment variables check:', {
+        hasSupabaseUrl,
+        hasSupabaseKey
+      });
+      
+      // Simple query to just get player data
+      const { data: playerData, error: playerError, status } = await supabase
+        .from('players')
+        .select('id, name, colorScheme, balance')
+        .order('balance', { ascending: false });
+        
+      if (playerError) {
+        console.error('Player query error:', {
+          message: playerError.message,
+          code: playerError.code,
+          details: playerError.details,
+          hint: playerError.hint,
+          httpStatus: status
+        });
+        throw playerError;
+      }
+      
+      console.log(`Successfully fetched ${playerData?.length || 0} players`);
+      
+      if (!playerData) {
+        console.warn('No player data returned from Supabase');
+        setPlayers([]);
+        return;
+      }
+      
+      // Map the data with safe defaults
+      const safePlayers = playerData.map(player => {
+        try {
+          return {
+            id: player.id,
+            name: player.name || 'Unnamed Player',
+            colorScheme: player.colorScheme || 'blue',
+            balance: typeof player.balance === 'number' ? player.balance : 0
+          };
+        } catch (err) {
+          console.error('Error processing player data:', err, 'Player object:', player);
+          // Return a default player object if error occurs while processing
+          return {
+            id: player.id || 'unknown-id',
+            name: 'Error: Malformed Player Data',
+            colorScheme: 'gray',
+            balance: 0
+          };
+        }
+      });
+      
+      setRetryCount(0); // Reset retry count on success
+      setPlayers(safePlayers);
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching players:', error);
+      
+      if (error instanceof Error) {
+        console.error('Error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        });
+      }
+      
+      setError('Failed to load leaderboard. Please try again later.');
+      
+      // Implement retry with exponential backoff
+      if (retryCount < maxRetries) {
+        const backoffTime = Math.pow(2, retryCount) * 1000; // Exponential backoff
+        console.log(`Retrying in ${backoffTime}ms (attempt ${retryCount + 1}/${maxRetries})...`);
+        
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+          fetchPlayers();
+        }, backoffTime);
+      } else {
+        console.error(`Failed after ${maxRetries} retry attempts`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -104,7 +155,7 @@ export default function LeaderboardTable() {
     return `bg-${color}-500`;
   };
 
-  if (loading) {
+  if (loading && retryCount === 0) {
     return (
       <div className="flex justify-center py-12">
         <LoadingSpinner />
@@ -115,7 +166,21 @@ export default function LeaderboardTable() {
   if (error) {
     return (
       <div className="bg-red-50 p-4 rounded-lg border border-red-100 text-red-600">
-        <p>{error}</p>
+        <div className="flex items-start">
+          <div>
+            <p className="font-medium mb-1">Error loading leaderboard</p>
+            <p className="mb-4">{error}</p>
+            <button 
+              onClick={() => {
+                setRetryCount(0);
+                fetchPlayers();
+              }}
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+            >
+              Retry Now
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
