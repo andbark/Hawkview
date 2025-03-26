@@ -7,9 +7,9 @@ export async function POST(request: Request) {
     const data = await request.json();
     const { name, type, initialPlayers } = data;
     
-    console.log('API received SQL game creation request:', { name, type, playerCount: initialPlayers?.length });
+    console.log('SQL API received game creation request:', { name, type, playerCount: initialPlayers?.length });
     
-    // Initialize Supabase with direct credentials
+    // Initialize Supabase client
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     
@@ -19,168 +19,159 @@ export async function POST(request: Request) {
     
     const supabase = createClient(supabaseUrl, supabaseKey);
     
+    // Check for existing game IDs to verify connection
+    console.log('Testing database connection...');
+    const { data: testData, error: testError } = await supabase
+      .from('games')
+      .select('id')
+      .limit(1)
+      .maybeSingle();
+      
+    if (testError) {
+      console.error('DB connection test error:', testError);
+      return NextResponse.json({ error: `Database connection issue: ${testError.message}` }, { status: 500 });
+    }
+    
+    console.log('DB connection successful, test result:', testData);
+
     // Calculate total pot
     const totalPot = initialPlayers.reduce((sum: number, p: any) => sum + p.buyIn, 0);
     const startTime = Date.now();
     
-    try {
-      // Insert game using pure SQL to avoid schema cache issues
-      const insertSql = `
-        INSERT INTO games (name, type, status, "startTime", "totalPot", players) 
-        VALUES ('${name}', '${type || 'other'}', 'active', ${startTime}, ${totalPot}, '{}')
-        RETURNING id
-      `;
-      
-      console.log('Executing SQL:', insertSql);
-      
-      // Use simpler query approach that shouldn't have issues
-      const { data: queryResult, error: queryError } = await supabase
-        .from('games')
-        .select('id')
-        .limit(1)
-        .maybeSingle();
+    // Try to create a game using direct SQL with snake_case column names
+    console.log('Trying to insert game with direct approach...');
+    const { data: gameData, error: insertError } = await supabase
+      .from('games')
+      .insert({
+        name: name,
+        type: type || 'other',
+        status: 'active',
+        start_time: startTime,
+        total_pot: totalPot,
+        players: {}
+      })
+      .select();
+
+    if (insertError) {
+      console.error('Direct insert error:', insertError);
+      return NextResponse.json({ error: `Failed to create game: ${insertError.message}` }, { status: 500 });
+    }
+    
+    if (!gameData || gameData.length === 0) {
+      return NextResponse.json({ error: 'Game created but no ID returned' }, { status: 500 });
+    }
+    
+    const gameId = gameData[0].id;
+    console.log('Game created successfully with ID:', gameId);
+    
+    // Process players
+    const playerResults = [];
+    
+    for (const player of initialPlayers) {
+      try {
+        // 1. Add player to game_participants
+        console.log(`Adding player ${player.playerId} to game...`);
+        const { error: participantError } = await supabase
+          .from('game_participants')
+          .insert({
+            game_id: gameId,           // snake_case
+            player_id: player.playerId, // snake_case
+            buy_in_amount: player.buyIn, // snake_case
+            joined_at: new Date().toISOString() // snake_case
+          });
         
-      if (queryError) {
-        console.error('Test query error:', queryError);
-      } else {
-        console.log('Test query succeeded:', queryResult);
-      }
-      
-      // Try direct insert first
-      const { data: insertResult, error: insertError } = await supabase
-        .from('games')
-        .insert({
-          name: name,
-          type: type || 'other',
-          status: 'active',
-          "startTime": startTime,
-          "totalPot": totalPot,
-          players: {}
-        })
-        .select('id');
-      
-      if (insertError) {
-        console.error('Insert error:', insertError);
-        return NextResponse.json({ 
-          error: `Failed to create game: ${insertError.message}`, 
-          details: insertError 
-        }, { status: 500 });
-      }
-      
-      if (!insertResult || insertResult.length === 0) {
-        return NextResponse.json({ error: 'No game ID returned after creation' }, { status: 500 });
-      }
-      
-      // Get the game ID
-      const gameId = insertResult[0].id;
-      console.log('Game created with ID:', gameId);
-      
-      // Process players
-      const playerResults = [];
-      
-      for (const player of initialPlayers) {
-        try {
-          // 1. Add player to game_participants using raw SQL
-          const participantSql = `
-            INSERT INTO game_participants ("gameId", "playerId", "buyInAmount", "joinedAt")
-            VALUES ($1, $2, $3, $4)
-          `;
-          
-          const { error: participantError } = await supabase.rpc('exec_sql', {
-            sql_query: participantSql,
-            params: [gameId, player.playerId, player.buyIn, new Date().toISOString()]
-          });
-          
-          if (participantError) {
-            console.error(`Error adding participant ${player.playerId}:`, participantError);
-            playerResults.push({ 
-              playerId: player.playerId, 
-              success: false, 
-              error: `Participant error: ${participantError.message}` 
-            });
-            continue;
-          }
-          
-          // 2. Create transaction record using raw SQL
-          const transactionSql = `
-            INSERT INTO transactions ("gameId", "playerId", amount, type, timestamp, description)
-            VALUES ($1, $2, $3, $4, $5, $6)
-          `;
-          
-          const { error: transactionError } = await supabase.rpc('exec_sql', {
-            sql_query: transactionSql,
-            params: [gameId, player.playerId, -player.buyIn, 'bet', Date.now(), `Buy-in for ${name}`]
-          });
-          
-          if (transactionError) {
-            console.error(`Error creating transaction for player ${player.playerId}:`, transactionError);
-            playerResults.push({ 
-              playerId: player.playerId, 
-              success: false, 
-              error: `Transaction error: ${transactionError.message}` 
-            });
-            continue;
-          }
-          
-          // 3. Update player balance using raw SQL
-          const balanceSql = `
-            UPDATE players SET balance = balance - $1 WHERE id = $2
-          `;
-          
-          const { error: balanceError } = await supabase.rpc('exec_sql', {
-            sql_query: balanceSql,
-            params: [player.buyIn, player.playerId]
-          });
-          
-          if (balanceError) {
-            console.error(`Error updating balance for player ${player.playerId}:`, balanceError);
-            playerResults.push({ 
-              playerId: player.playerId, 
-              success: false, 
-              error: `Balance update error: ${balanceError.message}` 
-            });
-            continue;
-          }
-          
-          playerResults.push({ 
-            playerId: player.playerId, 
-            success: true 
-          });
-        } catch (playerError) {
-          console.error(`Unexpected error processing player ${player.playerId}:`, playerError);
+        if (participantError) {
+          console.error(`Error adding player ${player.playerId}:`, participantError);
           playerResults.push({ 
             playerId: player.playerId, 
             success: false, 
-            error: playerError instanceof Error ? playerError.message : 'Unknown error'
+            error: participantError.message 
           });
+          continue;
         }
+        
+        // 2. Create transaction record
+        console.log(`Creating transaction for player ${player.playerId}...`);
+        const { error: transactionError } = await supabase
+          .from('transactions')
+          .insert({
+            game_id: gameId,         // snake_case
+            player_id: player.playerId, // snake_case
+            amount: -player.buyIn,
+            type: 'bet',
+            timestamp: Date.now(),
+            description: `Buy-in for ${name}`
+          });
+        
+        if (transactionError) {
+          console.error(`Error creating transaction for player ${player.playerId}:`, transactionError);
+          playerResults.push({ 
+            playerId: player.playerId, 
+            success: false, 
+            error: transactionError.message 
+          });
+          continue;
+        }
+        
+        // 3. Update player balance directly
+        console.log(`Updating balance for player ${player.playerId}...`);
+        
+        // First get the current balance
+        const { data: playerData, error: fetchError } = await supabase
+          .from('players')
+          .select('balance')
+          .eq('id', player.playerId)
+          .single();
+        
+        if (fetchError) {
+          console.error(`Error fetching player ${player.playerId}:`, fetchError);
+          playerResults.push({ 
+            playerId: player.playerId, 
+            success: false, 
+            error: fetchError.message 
+          });
+          continue;
+        }
+        
+        // Then update with new balance value
+        const newBalance = playerData.balance - player.buyIn;
+        const { error: balanceError } = await supabase
+          .from('players')
+          .update({ balance: newBalance })
+          .eq('id', player.playerId);
+        
+        if (balanceError) {
+          console.error(`Error updating balance for player ${player.playerId}:`, balanceError);
+          playerResults.push({ 
+            playerId: player.playerId, 
+            success: false, 
+            error: balanceError.message 
+          });
+          continue;
+        }
+        
+        playerResults.push({ 
+          playerId: player.playerId, 
+          success: true 
+        });
+      } catch (playerError) {
+        console.error(`Unexpected error processing player ${player.playerId}:`, playerError);
+        playerResults.push({ 
+          playerId: player.playerId, 
+          success: false, 
+          error: playerError instanceof Error ? playerError.message : 'Unknown error'
+        });
       }
-      
-      return NextResponse.json({
-        success: true,
-        gameId,
-        playerResults
-      });
-      
-    } catch (error) {
-      console.error('Error executing SQL:', error);
-      return NextResponse.json(
-        { 
-          error: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined
-        },
-        { status: 500 }
-      );
     }
+    
+    return NextResponse.json({
+      success: true,
+      gameId,
+      playerResults
+    });
     
   } catch (error) {
     console.error('Unexpected error in create-game-sql API:', error);
-    return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 } 
