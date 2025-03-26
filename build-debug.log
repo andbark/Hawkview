@@ -2,42 +2,35 @@
   - Environments: .env.local, .env
 
    Creating an optimized production build ...
-<t> [webpack.cache.PackFileCacheStrategy] restore cache container: 37.030625 ms
-    [webpack.cache.PackFileCacheStrategy] Restored pack from /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/.next/cache/webpack/server-production.pack, but version doesn't match.
+<t> [webpack.cache.PackFileCacheStrategy] restore cache container: 24.420625 ms
+<t> [webpack.cache.PackFileCacheStrategy] check build dependencies: 11.582791 ms
+<t> [webpack.cache.PackFileCacheStrategy] restore cache content metadata: 12.517875 ms
+    [webpack.cache.PackFileCacheStrategy] starting to restore cache content 0 (32.9 MiB) because of request to: ResolverCachePlugin|normal|default|dependencyType=|esm|modules=[|0=|node_modules|]|fallback=|false|exportsFields=[|0=|exports|]|importsFields=[|0=|imports|]|conditionNames=[|0=|node|1=|import|]|descriptionFiles=[|0=|package.json|]|extensions=[|0=|.js|1=|.json|2=|.node|]|enforceExtensions=|false|symlinks=|true|mainFields=[|0=|main|]|mainFiles=[|0=|index|]|roots=[|]|fullySpecified=|true|preferRelative=|false|preferAbsolute=|false|restrictions=[|]|alias=|false|path=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard|request=|next-route-loader?kind=PAGES&page=%2F_error&preferredRegion=&absolutePagePath=next%2Fdist%2Fpages%2F_error&absoluteAppPath=next%2Fdist%2Fpages%2F_app&absoluteDocumentPath=next%2Fdist%2Fpages%2F_document&middlewareConfigBase64=e30%3D!
+<t> [webpack.cache.PackFileCacheStrategy] restore cache content 0 (32.9 MiB): 60.078875 ms
     [IdleFileCachePlugin] Initial cache was generated and cache will be persisted in 5s.
-    [webpack.cache.PackFileCacheStrategy] Pack got invalid because of write to: ResolverCachePlugin|normal|default|dependencyType=|esm|modules=[|0=|node_modules|]|fallback=|false|exportsFields=[|0=|exports|]|importsFields=[|0=|imports|]|conditionNames=[|0=|node|1=|import|]|descriptionFiles=[|0=|package.json|]|extensions=[|0=|.js|1=|.json|2=|.node|]|enforceExtensions=|false|symlinks=|true|mainFields=[|0=|main|]|mainFiles=[|0=|index|]|roots=[|]|fullySpecified=|true|preferRelative=|false|preferAbsolute=|false|restrictions=[|]|alias=|false|path=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard|request=|next-route-loader?kind=PAGES&page=%2F_error&preferredRegion=&absolutePagePath=next%2Fdist%2Fpages%2F_error&absoluteAppPath=next%2Fdist%2Fpages%2F_app&absoluteDocumentPath=next%2Fdist%2Fpages%2F_document&middlewareConfigBase64=e30%3D!
+    [webpack.cache.PackFileCacheStrategy] Pack got invalid because of write to: ResolverCachePlugin|normal|default|alias=|false|dependencyType=|esm|modules=[|0=|node_modules|]|fallback=|false|exportsFields=[|0=|exports|]|importsFields=[|0=|imports|]|conditionNames=[|0=|node|1=|import|]|descriptionFiles=[|0=|package.json|]|extensions=[|0=|.js|1=|.json|2=|.node|]|enforceExtensions=|false|symlinks=|true|mainFields=[|0=|main|]|mainFiles=[|0=|index|]|roots=[|]|fullySpecified=|true|preferRelative=|false|preferAbsolute=|false|restrictions=[|]|path=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard|request=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/app/page.tsx
     [webpack.cache.PackFileCacheStrategy] Storing pack...
-    [webpack.cache.PackFileCacheStrategy] Capturing build dependencies... (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/next.config.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/webpack/loaders/next-app-loader.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/webpack/loaders/next-flight-loader/index.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/ignore-loader/index.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/webpack/loaders/next-font-loader/index.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/webpack/loaders/next-flight-client-entry-loader.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/webpack/loaders/next-flight-client-module-loader.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js)
-<t> [webpack.cache.PackFileCacheStrategy] resolve build dependencies: 323.607875 ms
-<t> [webpack.cache.PackFileCacheStrategy] snapshot build dependencies: 7.220458 ms
-    [webpack.cache.PackFileCacheStrategy] Captured build dependencies
-    [webpack.cache.PackFileCacheStrategy] 2531 fresh items in cache put into pack 0
-<t> [webpack.cache.PackFileCacheStrategy] store pack: 196.139875 ms
-    [webpack.cache.PackFileCacheStrategy] Stored pack (2531 items, 1 files, 33 MiB)
-<t> [webpack.cache.PackFileCacheStrategy] restore cache container: 6.150041 ms
-    [webpack.cache.PackFileCacheStrategy] Restored pack from /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/.next/cache/webpack/edge-server-production.pack, but version doesn't match.
+    [webpack.cache.PackFileCacheStrategy] 28 fresh items in cache put into pack 1
+<t> [webpack.cache.PackFileCacheStrategy] store pack: 118.162042 ms
+    [webpack.cache.PackFileCacheStrategy] Stored pack (2531 items, 2 files, 34 MiB)
+<t> [webpack.cache.PackFileCacheStrategy] restore cache container: 8.363666 ms
+<t> [webpack.cache.PackFileCacheStrategy] check build dependencies: 6.588292 ms
+<t> [webpack.cache.PackFileCacheStrategy] restore cache content metadata: 0.386625 ms
+    [webpack.cache.PackFileCacheStrategy] starting to restore cache content 0 (3.49 MiB) because of request to: ResolverCachePlugin|loader|default|path=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard|request=|next-middleware-loader
+<t> [webpack.cache.PackFileCacheStrategy] restore cache content 0 (3.49 MiB): 6.852166 ms
     [IdleFileCachePlugin] Initial cache was generated and cache will be persisted in 5s.
-    [webpack.cache.PackFileCacheStrategy] Pack got invalid because of write to: ResolverCachePlugin|loader|default|path=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard|request=|next-middleware-loader
-    [webpack.cache.PackFileCacheStrategy] Storing pack...
-    [webpack.cache.PackFileCacheStrategy] Capturing build dependencies... (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/next.config.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/webpack/loaders/next-middleware-loader.js)
-<t> [webpack.cache.PackFileCacheStrategy] resolve build dependencies: 298.7375 ms
-<t> [webpack.cache.PackFileCacheStrategy] snapshot build dependencies: 7.41675 ms
-    [webpack.cache.PackFileCacheStrategy] Captured build dependencies
-    [webpack.cache.PackFileCacheStrategy] 201 fresh items in cache put into pack 0
-<t> [webpack.cache.PackFileCacheStrategy] store pack: 45.034959 ms
-    [webpack.cache.PackFileCacheStrategy] Stored pack (201 items, 1 files, 3 MiB)
-<t> [webpack.cache.PackFileCacheStrategy] restore cache container: 8.344917 ms
-    [webpack.cache.PackFileCacheStrategy] Restored pack from /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/.next/cache/webpack/client-production.pack, but version doesn't match.
+<t> [webpack.cache.PackFileCacheStrategy] restore cache container: 9.286125 ms
+<t> [webpack.cache.PackFileCacheStrategy] check build dependencies: 5.7075 ms
+<t> [webpack.cache.PackFileCacheStrategy] restore cache content metadata: 6.532125 ms
+    [webpack.cache.PackFileCacheStrategy] starting to restore cache content 0 (44 MiB) because of request to: ResolverCachePlugin|normal|default|dependencyType=|esm|path=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard|request=|./node_modules/next/dist/client/next.js
+<t> [webpack.cache.PackFileCacheStrategy] restore cache content 0 (44 MiB): 57.9895 ms
     [IdleFileCachePlugin] Initial cache was generated and cache will be persisted in 5s.
-    [webpack.cache.PackFileCacheStrategy] Pack got invalid because of write to: ResolverCachePlugin|loader|default|path=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard|request=|next-flight-client-entry-loader
+    [webpack.cache.PackFileCacheStrategy] Pack got invalid because of write to: ResolverCachePlugin|normal|default|alias=[|server-only$=|next/dist/compiled/server-only/index|client-only$=|next/dist/compiled/client-only/index|next/dist/compiled/client-only$=|next/dist/compiled/client-only/index|next/dist/compiled/server-only=|next/dist/compiled/server-only/index|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/head.js=|next/dist/client/components/noop-head|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/image.js=|next/dist/api/image|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/constants.js=|next/dist/api/constants|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/router.js=|next/dist/api/router|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dynamic.js=|next/dist/api/app-dynamic|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/script.js=|next/dist/api/script|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/link.js=|next/dist/api/link|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/navigation.js=|next/dist/api/navigation|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/headers.js=|next/dist/api/headers|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/og.js=|next/dist/api/og|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/server.js=|next/dist/api/server|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/document.js=|next/dist/api/document|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/app.js=|next/dist/api/app|]|fallback=[|assert=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/assert/assert.js|buffer=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/buffer/index.js|constants=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/constants-browserify/constants.json|crypto=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/crypto-browserify/index.js|domain=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/domain-browser/index.js|http=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/stream-http/index.js|https=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/https-browserify/index.js|os=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/os-browserify/browser.js|path=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/path-browserify/index.js|punycode=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/punycode/punycode.js|process=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/polyfills/process.js|querystring=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/querystring-es3/index.js|stream=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/stream-browserify/index.js|string_decoder=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/string_decoder/string_decoder.js|sys=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/util/util.js|timers=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/timers-browserify/main.js|tty=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/tty-browserify/index.js|util=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/util/util.js|vm=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/vm-browserify/index.js|zlib=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/browserify-zlib/index.js|events=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/events/events.js|setImmediate=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/setimmediate/setImmediate.js|]|dependencyType=|esm|path=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard|request=|/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/app/page.tsx
     [webpack.cache.PackFileCacheStrategy] Storing pack...
-    [webpack.cache.PackFileCacheStrategy] Capturing build dependencies... (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/next.config.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/webpack/loaders/next-flight-client-entry-loader.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/webpack/loaders/next-flight-client-module-loader.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/webpack/loaders/next-client-pages-loader.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/webpack/loaders/next-font-loader/index.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/mini-css-extract-plugin/loader.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js, /Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/build/webpack/loaders/next-flight-css-loader.js)
-<t> [webpack.cache.PackFileCacheStrategy] resolve build dependencies: 426.475917 ms
-<t> [webpack.cache.PackFileCacheStrategy] snapshot build dependencies: 7.3965 ms
-    [webpack.cache.PackFileCacheStrategy] Captured build dependencies
-    [webpack.cache.PackFileCacheStrategy] 1600 fresh items in cache put into pack 0
-<t> [webpack.cache.PackFileCacheStrategy] store pack: 135.447125 ms
-    [webpack.cache.PackFileCacheStrategy] Stored pack (1600 items, 1 files, 44 MiB)
+    [webpack.cache.PackFileCacheStrategy] 44 fresh items in cache put into pack 1
+    [webpack.cache.PackFileCacheStrategy] Split pack 0 into pack 0 with 1550 used items and pack 2 with 14 unused items
+<t> [webpack.cache.PackFileCacheStrategy] store pack: 69.406583 ms
+    [webpack.cache.PackFileCacheStrategy] Stored pack (1608 items, 3 files, 45 MiB)
  ✓ Compiled successfully
    Skipping validation of types
    Skipping linting
@@ -46,34 +39,38 @@
    Generating static pages (3/12) 
    Generating static pages (6/12) 
    Generating static pages (9/12) 
-ReferenceError: window is not defined
-    at l (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/.next/server/app/page.js:1:3063)
-    at nj (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:46252)
-    at nM (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:47572)
-    at nN (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:64547)
-    at nI (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:47011)
-    at nM (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:47718)
-    at nM (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:61547)
-    at nN (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:64547)
-    at nB (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:67539)
-    at nD (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:66681) {
-  digest: '1279825725'
-}
-
-Error occurred prerendering page "/". Read more: https://nextjs.org/docs/messages/prerender-error
-
-ReferenceError: window is not defined
-    at l (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/.next/server/app/page.js:1:3063)
-    at nj (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:46252)
-    at nM (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:47572)
-    at nN (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:64547)
-    at nI (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:47011)
-    at nM (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:47718)
-    at nM (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:61547)
-    at nN (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:64547)
-    at nB (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:67539)
-    at nD (/Users/andrewbarksdale/Desktop/bachelor-party-dashboard/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:66681)
  ✓ Generating static pages (12/12)
+   Finalizing page optimization ...
+   Collecting build traces ...
 
-> Export encountered errors on following paths:
-	/page: /
+
+Redirects
+┌ source: /:path+/
+├ destination: /:path+
+└ permanent: true
+
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    1.27 kB        95.7 kB
+├ ○ /_not-found                          137 B          87.7 kB
+├ ○ /admin                               491 B            88 kB
+├ ƒ /api/retroactive-game-processing     0 B                0 B
+├ ○ /game-history                        745 B          95.1 kB
+├ ○ /games                               2.33 kB        89.9 kB
+├ ƒ /games/[id]                          16.4 kB         150 kB
+├ ƒ /games/[id]/edit                     4.25 kB         138 kB
+├ ○ /leaderboard                         1.02 kB        95.4 kB
+├ ○ /players                             897 B          95.3 kB
+├ ○ /test                                705 B          88.2 kB
+└ ○ /transactions                        829 B          95.2 kB
++ First Load JS shared by all            87.5 kB
+  ├ chunks/117-0be7dbb5b817260d.js       31.6 kB
+  ├ chunks/fd9d1056-ec8a1931a7ab15e3.js  53.7 kB
+  └ other shared chunks (total)          2.18 kB
+
+
+ƒ Middleware                             26.3 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
