@@ -9,6 +9,8 @@ interface Player {
   id: string;
   name: string;
   balance: number;
+  gamesplayed: number;
+  gameswon: number;
 }
 
 export default function LeaderboardTable() {
@@ -43,17 +45,18 @@ export default function LeaderboardTable() {
         return;
       }
       
-      console.log('⏳ Starting player fetch...');
+      console.log('⏳ Starting players fetch...');
       
       // Most basic query possible
       const { data, error } = await supabase
         .from('players')
-        .select('id, name, balance');
+        .select('id, name, balance, gamesplayed, gameswon')
+        .order('balance', { ascending: false });
       
       console.log('📊 Query response:', { hasData: !!data, hasError: !!error, count: data?.length });
       
       if (error) {
-        console.error('🔴 Player fetch error:', error);
+        console.error('🔴 Players fetch error:', error);
         setError(`Database error: ${error.message}`);
         return;
       }
@@ -107,13 +110,15 @@ export default function LeaderboardTable() {
   // Ultra simple rendering
   return (
     <div>
-      <h2 className="text-lg font-bold mb-4">Player Rankings</h2>
+      <h2 className="text-lg font-bold mb-4">Player Leaderboard</h2>
       <table className="w-full">
         <thead>
           <tr>
             <th className="text-left">Rank</th>
-            <th className="text-left">Player</th>
+            <th className="text-left">Name</th>
             <th className="text-right">Balance</th>
+            <th className="text-right">Games Played</th>
+            <th className="text-right">Games Won</th>
           </tr>
         </thead>
         <tbody>
@@ -121,9 +126,9 @@ export default function LeaderboardTable() {
             <tr key={player.id} className="border-t">
               <td className="py-2">{index + 1}</td>
               <td>{player.name}</td>
-              <td className="text-right">
-                ${player.balance.toFixed(2)}
-              </td>
+              <td className="text-right">${player.balance}</td>
+              <td className="text-right">{player.gamesplayed}</td>
+              <td className="text-right">{player.gameswon}</td>
             </tr>
           ))}
         </tbody>

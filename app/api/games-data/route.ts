@@ -28,11 +28,11 @@ export async function GET() {
       console.error('Error getting table names:', e);
     }
     
-    // Get games with detailed information
+    // Get games with detailed information - use lowercase column names to match DB schema
     const { data, error } = await supabase
       .from('games')
       .select('*')
-      .order('createdAt', { ascending: false });
+      .order('createdat', { ascending: false });
     
     if (error) {
       console.error('Error fetching games:', error);

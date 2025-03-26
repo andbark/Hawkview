@@ -9,7 +9,7 @@ interface Game {
   id: string;
   name: string;
   status: string;
-  createdAt: string;
+  createdat: string;
 }
 
 export default function GameList() {
@@ -49,7 +49,7 @@ export default function GameList() {
       // Most basic query possible without joins
       const { data, error } = await supabase
         .from('games')
-        .select('id, name, status, createdAt');
+        .select('id, name, status, createdat');
       
       console.log('📊 Query response:', { hasData: !!data, hasError: !!error, count: data?.length });
       
@@ -123,7 +123,7 @@ export default function GameList() {
               <td className="py-2">{game.name}</td>
               <td>{game.status}</td>
               <td className="text-right">
-                {new Date(game.createdAt).toLocaleDateString()}
+                {new Date(game.createdat).toLocaleDateString()}
               </td>
             </tr>
           ))}
