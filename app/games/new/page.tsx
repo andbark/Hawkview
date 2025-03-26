@@ -203,114 +203,145 @@ function NewGameForm() {
       console.log('Creating new game with name:', formData.name);
       console.log('Initial players:', formData.initialPlayers);
       
-      // Create the game
-      const { data: gameData, error: gameError } = await db
-        .from('games')
-        .insert({
-          name: formData.name,
-          type: 'other', // Default type since we removed the type selection
-          status: 'active',
-          startTime: Date.now(),
-          totalPot: formData.initialPlayers.reduce((sum, p) => sum + p.buyIn, 0),
-          players: {}  // Empty JSONB object as per schema
-        })
-        .select();
+      // Try the direct REST API approach to bypass schema cache issues
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
         
-      if (gameError) {
-        console.error('Error creating game record:', gameError);
-        setError(`Failed to create game: ${gameError.message}`);
-        // Log more details to help with debugging
-        console.error('Game data attempted to insert:', {
+        if (!supabaseUrl || !supabaseKey) {
+          throw new Error('Missing Supabase environment variables');
+        }
+        
+        // Convert players to a suitable format for the games table
+        const playersObject: Record<string, {id: string, name: string, bet: number}> = {};
+        formData.initialPlayers.forEach(player => {
+          const playerDetails = getPlayerById(player.playerId);
+          if (playerDetails) {
+            playersObject[player.playerId] = {
+              id: player.playerId,
+              name: playerDetails.name,
+              bet: player.buyIn
+            };
+          }
+        });
+        
+        // Create minimal game data
+        const gameData = {
           name: formData.name,
           type: 'other',
           status: 'active',
           startTime: Date.now(),
           totalPot: formData.initialPlayers.reduce((sum, p) => sum + p.buyIn, 0),
-          players: {}
+          players: JSON.stringify(playersObject)
+        };
+        
+        console.log('Sending direct API request with data:', gameData);
+        
+        // Make direct REST API request
+        const response = await fetch(`${supabaseUrl}/rest/v1/games`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(gameData)
         });
-        return;
-      }
-      
-      if (!gameData || gameData.length === 0) {
-        console.error('No game data returned after insert');
-        setError('Failed to create game: No data returned from database');
-        return;
-      }
-      
-      const gameId = gameData[0].id;
-      console.log('Game created with ID:', gameId);
-      setCreatedGameId(gameId);
-      
-      // Add all the initial players
-      for (const player of formData.initialPlayers) {
-        console.log(`Adding player ${player.playerId} with buy-in ${player.buyIn} to game ${gameId}`);
         
-        // 1. Create a game_participants record
-        const { error: participantError } = await db
-          .from('game_participants')
-          .insert({
-            gameId: gameId,
-            playerId: player.playerId,
-            buyInAmount: player.buyIn,
-            joinedAt: new Date().toISOString()
-          });
-          
-        if (participantError) {
-          console.error(`Error adding participant ${player.playerId}:`, participantError);
-          setError(`Failed to add player to game: ${participantError.message}`);
-          return;
+        if (!response.ok) {
+          console.error(`Error response from Supabase API: ${response.status} ${response.statusText}`);
+          const errorText = await response.text();
+          console.error('Error details:', errorText);
+          throw new Error(`Failed to create game via API: ${response.statusText}`);
         }
         
-        // 2. Create a transaction record for the buy-in
-        const { error: transactionError } = await db
-          .from('transactions')
-          .insert({
-            playerId: player.playerId,
-            amount: -player.buyIn, // Negative because player is spending money
-            type: 'bet',
-            gameId: gameId,
-            timestamp: Date.now(),
-            description: `Buy-in for ${formData.name}`
-          });
-          
-        if (transactionError) {
-          console.error(`Error creating transaction for player ${player.playerId}:`, transactionError);
-          setError(`Failed to process transaction: ${transactionError.message}`);
-          return;
+        const createdGameData = await response.json();
+        console.log('Game created successfully via direct API:', createdGameData);
+        
+        if (!createdGameData || createdGameData.length === 0) {
+          throw new Error('No game data returned after creation');
         }
         
-        // 3. Update player balance
-        const { error: playerUpdateError } = await db
-          .from('players')
-          .update({ 
-            balance: db.rpc('decrement', { x: player.buyIn })
-          })
-          .eq('id', player.playerId);
+        const gameId = createdGameData[0].id;
+        console.log('Game created with ID:', gameId);
+        setCreatedGameId(gameId);
+        
+        // Add all the initial players
+        for (const player of formData.initialPlayers) {
+          console.log(`Adding player ${player.playerId} with buy-in ${player.buyIn} to game ${gameId}`);
           
-        if (playerUpdateError) {
-          console.error(`Error updating balance for player ${player.playerId}:`, playerUpdateError);
-          setError(`Failed to update player balance: ${playerUpdateError.message}`);
-          // Additional details to help with debugging
-          console.error('Player balance update details:', {
-            player_id: player.playerId,
-            buy_in: player.buyIn,
-            decrement_function: 'Using RPC "decrement" with parameter x'
-          });
-          return;
+          // 1. Create a game_participants record
+          const { error: participantError } = await db
+            .from('game_participants')
+            .insert({
+              gameId: gameId,
+              playerId: player.playerId,
+              buyInAmount: player.buyIn,
+              joinedAt: new Date().toISOString()
+            });
+            
+          if (participantError) {
+            console.error(`Error adding participant ${player.playerId}:`, participantError);
+            setError(`Failed to add player to game: ${participantError.message}`);
+            return;
+          }
+          
+          // 2. Create a transaction record for the buy-in
+          const { error: transactionError } = await db
+            .from('transactions')
+            .insert({
+              playerId: player.playerId,
+              amount: -player.buyIn, // Negative because player is spending money
+              type: 'bet',
+              gameId: gameId,
+              timestamp: Date.now(),
+              description: `Buy-in for ${formData.name}`
+            });
+            
+          if (transactionError) {
+            console.error(`Error creating transaction for player ${player.playerId}:`, transactionError);
+            setError(`Failed to process transaction: ${transactionError.message}`);
+            return;
+          }
+          
+          // 3. Update player balance
+          const { error: playerUpdateError } = await db
+            .from('players')
+            .update({ 
+              balance: db.rpc('decrement', { x: player.buyIn })
+            })
+            .eq('id', player.playerId);
+            
+          if (playerUpdateError) {
+            console.error(`Error updating balance for player ${player.playerId}:`, playerUpdateError);
+            setError(`Failed to update player balance: ${playerUpdateError.message}`);
+            // Additional details to help with debugging
+            console.error('Player balance update details:', {
+              player_id: player.playerId,
+              buy_in: player.buyIn,
+              decrement_function: 'Using RPC "decrement" with parameter x'
+            });
+            return;
+          }
         }
+        
+        console.log('Game creation completed successfully');
+        // Success!
+        setSuccess(true);
+        
+        // After 1.5 seconds, redirect to the game page
+        setTimeout(() => {
+          router.push(`/games/${gameId}`);
+        }, 1500);
+        
+      } catch (error) {
+        console.error('Error creating game via direct API:', error);
+        setError(`Failed to create game: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
-      
-      console.log('Game creation completed successfully');
-      // Success!
-      setSuccess(true);
-      
-      // After 1.5 seconds, redirect to the game page
-      setTimeout(() => {
-        router.push(`/games/${gameId}`);
-      }, 1500);
       
     } catch (error) {
-      console.error('Error creating game:', error);
+      console.error('Error in overall game creation process:', error);
       setError('Failed to create game. Please try again.');
     } finally {
       setIsSubmitting(false);
