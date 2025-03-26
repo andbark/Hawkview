@@ -1,30 +1,43 @@
 'use client';
 
+import { useEffect } from 'react';
+import { logComponent, useComponentLogger } from '../lib/componentLogger';
+import AppNavigation from '../components/AppNavigation';
 import Link from 'next/link';
+import { ChartBarIcon } from '@heroicons/react/24/outline';
 
 export default function LeaderboardPage() {
+  useEffect(() => {
+    logComponent('LeaderboardPage');
+  }, []);
+  
+  // Use the hook for component lifecycle logging
+  useComponentLogger('LeaderboardPage');
+
   return (
-    <main className="p-8">
-      <h1 className="text-4xl font-bold mb-6">Leaderboard</h1>
-      <p className="text-xl mb-8">Track player rankings and scores</p>
+    <main className="min-h-screen bg-gray-50">
+      <AppNavigation />
       
-      <div className="bg-white p-8 rounded-lg border shadow-sm">
-        <div className="text-center py-12">
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            fill="none" 
-            viewBox="0 0 24 24" 
-            strokeWidth={1.5} 
-            stroke="currentColor" 
-            className="w-16 h-16 mx-auto text-gray-300 mb-4"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0" />
-          </svg>
-          <h2 className="text-2xl font-medium mb-2">No Leaderboard Data Yet</h2>
-          <p className="text-gray-500 mb-6">Player rankings will appear here once games are played</p>
-          <Link href="/" className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-block">
-            Return Home
-          </Link>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Leaderboard</h1>
+          <p className="text-gray-600 mb-6">Track player rankings and scores</p>
+          
+          <div className="bg-white p-8 rounded-lg border shadow-sm">
+            <div className="text-center py-12">
+              <ChartBarIcon className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+              <h2 className="text-2xl font-medium mb-2">No Leaderboard Data Yet</h2>
+              <p className="text-gray-500 mb-6">Player rankings will appear here once games are played</p>
+              
+              <Link href="/games" className="bg-navy text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-block mr-4">
+                Create Game
+              </Link>
+              
+              <Link href="/" className="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 transition-colors inline-block">
+                Return Home
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </main>
