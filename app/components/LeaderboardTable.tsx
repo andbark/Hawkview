@@ -171,6 +171,16 @@ export default function LeaderboardTable() {
       minimumFractionDigits: 2
     }).format(amount);
   };
+  
+  // Helper to get color class based on colorScheme
+  const getColorClass = (colorScheme: string) => {
+    const validColors = ['blue', 'red', 'green', 'yellow', 'purple', 'pink', 'indigo', 'gray'];
+    const defaultColor = 'blue';
+    
+    // If the color is valid, use it; otherwise use default
+    const color = validColors.includes(colorScheme) ? colorScheme : defaultColor;
+    return `bg-${color}-500`;
+  };
 
   if (loading) {
     return (
@@ -246,88 +256,49 @@ export default function LeaderboardTable() {
                   </td>
                   <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
                     <div className="flex items-center">
-                      <div className={`w-2 h-10 mr-3 bg-${player.colorScheme}-500 rounded-full`}></div>
+                      <div className={`w-2 h-10 mr-3 ${getColorClass(player.colorScheme)} rounded-full`}></div>
                       <Link href={`/players/${player.id}`} className="hover:underline">
                         {player.name}
                       </Link>
                     </div>
                   </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-right">
-                    <span 
-                      className={`font-medium ${
-                        player.balance > 0 
-                          ? 'text-green-600' 
-                          : player.balance < 0 
-                            ? 'text-red-600' 
-                            : 'text-gray-600'
-                      }`}
-                    >
+                  <td className="whitespace-nowrap px-3 py-4 text-sm text-right font-medium">
+                    <span className={player.balance >= 0 ? 'text-green-600' : 'text-red-600'}>
                       {formatCurrency(player.balance)}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-center text-green-600 font-medium">
+                  <td className="whitespace-nowrap px-3 py-4 text-sm text-center text-green-600">
                     {player.wins}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-center text-red-600 font-medium">
+                  <td className="whitespace-nowrap px-3 py-4 text-sm text-center text-red-600">
                     {player.losses}
                   </td>
                   <td className="whitespace-nowrap px-3 py-4 text-sm text-right sm:pr-6">
-                    {player.totalGames > 0 ? (
-                      <div className="flex items-center justify-end">
-                        <span className="font-medium">
-                          {((player.wins / player.totalGames) * 100).toFixed(1)}%
-                        </span>
-                        {player.wins > player.losses ? (
-                          <ArrowSmallUpIcon className="h-4 w-4 ml-1 text-green-500" />
-                        ) : player.losses > player.wins ? (
-                          <ArrowSmallDownIcon className="h-4 w-4 ml-1 text-red-500" />
-                        ) : null}
-                      </div>
-                    ) : (
-                      <span className="text-gray-400">N/A</span>
-                    )}
+                    {player.totalGames > 0 
+                      ? `${Math.round((player.wins / player.totalGames) * 100)}%`
+                      : '0%'
+                    }
                   </td>
                 </tr>
                 
-                {/* Extended Statistics Row */}
+                {/* Extended stats row, shown when showExtendedStats is true */}
                 {showExtendedStats && (
-                  <tr className={`${index === 0 ? 'bg-yellow-50/50' : 'bg-gray-50/50'}`}>
-                    <td colSpan={6} className="px-3 py-3 text-xs">
-                      <div className="grid grid-cols-3 gap-4">
+                  <tr className="bg-gray-50">
+                    <td colSpan={6} className="px-3 py-4">
+                      <div className="grid grid-cols-3 gap-4 text-sm">
                         <div>
-                          <p className="text-gray-500 mb-1">Games Played</p>
-                          <p className="font-medium text-gray-700">{player.gamesPlayed}</p>
+                          <p className="text-gray-500">Games Played</p>
+                          <p className="font-medium">{player.gamesPlayed}</p>
                         </div>
                         <div>
-                          <p className="text-gray-500 mb-1">Biggest Win</p>
-                          <p className="font-medium text-green-600">
-                            {player.biggestWin > 0 ? formatCurrency(player.biggestWin) : 'N/A'}
-                          </p>
+                          <p className="text-gray-500">Biggest Win</p>
+                          <p className="font-medium text-green-600">{formatCurrency(player.biggestWin)}</p>
                         </div>
                         <div>
-                          <p className="text-gray-500 mb-1">Biggest Loss</p>
-                          <p className="font-medium text-red-600">
-                            {player.biggestLoss > 0 ? formatCurrency(player.biggestLoss) : 'N/A'}
-                          </p>
+                          <p className="text-gray-500">Biggest Loss</p>
+                          <p className="font-medium text-red-600">{formatCurrency(player.biggestLoss)}</p>
                         </div>
                       </div>
-                      
-                      {/* Game Type Stats */}
-                      {Object.keys(player.gameTypes).length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-gray-200">
-                          <p className="text-gray-500 mb-1">Game Types</p>
-                          <div className="flex flex-wrap gap-2">
-                            {Object.entries(player.gameTypes).map(([type, count]) => (
-                              <span 
-                                key={type} 
-                                className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100"
-                              >
-                                {type}: {count}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </td>
                   </tr>
                 )}
