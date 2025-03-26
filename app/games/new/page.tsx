@@ -193,19 +193,18 @@ function NewGameForm() {
       console.log('Creating new game with name:', formData.name);
       console.log('Initial players:', formData.initialPlayers);
       
-      // Call our dedicated API instead of using Supabase directly
+      // Prepare the request data
+      const requestData = {
+        name: formData.name,
+        type: 'other',
+        initialPlayers: formData.initialPlayers,
+      };
+      
+      console.log('Calling API with data:', requestData);
+      
+      // Try our new direct endpoint first
       try {
-        // Prepare the request data
-        const requestData = {
-          name: formData.name,
-          type: 'other',
-          initialPlayers: formData.initialPlayers,
-        };
-        
-        console.log('Calling API with data:', requestData);
-        
-        // Make API request
-        const response = await fetch('/api/create-game', {
+        const response = await fetch('/api/create-game-direct', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -215,20 +214,67 @@ function NewGameForm() {
         
         if (!response.ok) {
           let errorMessage = `API error: ${response.status} ${response.statusText}`;
+          let errorDetails;
+          
           try {
             const errorData = await response.json();
             console.error('API error response:', errorData);
+            errorDetails = errorData?.details;
+            
             if (errorData.error) {
               errorMessage = errorData.error;
             }
           } catch (e) {
             console.error('Failed to parse error response:', e);
           }
-          throw new Error(errorMessage);
+          
+          // Try our original endpoint as a fallback if direct fails
+          console.log('Direct game creation failed, trying original endpoint as fallback...');
+          
+          const fallbackResponse = await fetch('/api/create-game', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestData),
+          });
+          
+          if (!fallbackResponse.ok) {
+            throw new Error(`${errorMessage}${errorDetails ? ` (Details: ${JSON.stringify(errorDetails)})` : ''}`);
+          }
+          
+          const result = await fallbackResponse.json();
+          console.log('Game creation fallback API response:', result);
+          
+          if (!result.success || !result.gameId) {
+            throw new Error('Failed to create game: Fallback API returned unsuccessful response');
+          }
+          
+          // Store the game ID
+          const gameId = result.gameId;
+          setCreatedGameId(gameId);
+          
+          // Check if all players were added successfully
+          const failedPlayers = result.playerResults?.filter((p: any) => !p.success) || [];
+          if (failedPlayers.length > 0) {
+            console.warn('Some players were not added to the game (via fallback):', failedPlayers);
+            setError(`Game created but failed to add ${failedPlayers.length} players. The game may be incomplete.`);
+            // We'll still consider this a success but with a warning
+          }
+          
+          // Success with fallback!
+          setSuccess(true);
+          
+          // After 1.5 seconds, redirect to the game page
+          setTimeout(() => {
+            router.push(`/games/${gameId}`);
+          }, 1500);
+          
+          return; // Exit early if fallback succeeded
         }
         
         const result = await response.json();
-        console.log('Game creation API response:', result);
+        console.log('Game creation direct API response:', result);
         
         if (!result.success || !result.gameId) {
           throw new Error('Failed to create game: API returned unsuccessful response');
@@ -253,12 +299,10 @@ function NewGameForm() {
         setTimeout(() => {
           router.push(`/games/${gameId}`);
         }, 1500);
-        
       } catch (error) {
         console.error('Error creating game via API:', error);
         setError(`Failed to create game: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
-      
     } catch (error) {
       console.error('Error in overall game creation process:', error);
       setError('Failed to create game. Please try again.');
