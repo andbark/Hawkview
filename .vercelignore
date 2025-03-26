@@ -2,4 +2,16 @@ src
 simple
 simple-test
 SUPABASE_SETUP.md
-index.html 
+index.html
+README.md
+.git
+.gitignore
+temp-disable
+temp-disable/
+*.bak
+.vercel
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+node_modules 
