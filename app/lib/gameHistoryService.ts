@@ -32,7 +32,11 @@ interface Game {
   status: 'active' | 'completed' | 'cancelled';
   winner?: string;
   notes?: string;
-  customData?: any;
+  customData?: {
+    name?: string;
+    wagerAmount?: number;
+    [key: string]: any;
+  };
   winMethod?: string;
 }
 

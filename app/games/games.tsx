@@ -43,8 +43,18 @@ interface Game {
   notes?: string;
   winMethod?: string;
   customData?: {
-    name: string;
-    wagerAmount: number;
+    name?: string;
+    wagerAmount?: number;
+    [key: string]: any;
+  };
+  createdLocally?: boolean;
+}
+
+// Add this type declaration at the top of the file after imports
+interface DataRefreshEvent extends CustomEvent {
+  detail: {
+    type: string;
+    data: any;
   };
 }
 
@@ -303,15 +313,11 @@ export default function Games() {
       toast.error('You are offline. Game actions will be saved locally.');
     };
     
-    // Add listener for dataRefresh events
-    const handleDataRefresh = (event: any) => {
-      console.log('Data refresh event received in games page', event.detail);
+    // Update the event handler
+    const handleDataRefresh = (event: Event) => {
+      const customEvent = event as DataRefreshEvent;
+      console.log('Data refresh event received in games page', customEvent.detail);
       fetchData(); // Reload games data
-      
-      // Wait for games to load before checking sync status
-      setTimeout(() => {
-        checkGamesSyncStatus();
-      }, 1000);
     };
     
     window.addEventListener('online', handleOnline);
@@ -553,10 +559,23 @@ export default function Games() {
     players: GamePlayer[];
     totalPot: number;
     customData?: {
-      name: string;
-      wagerAmount: number;
+      name?: string;
+      wagerAmount?: number;
+      [key: string]: any;
     };
   }) => {
+    const newGame: Partial<Game> = {
+      id: crypto.randomUUID(),
+      name: gameFormData.name,
+      type: gameFormData.type,
+      status: 'active' as const,
+      startTime: Date.now(),
+      totalPot: gameFormData.totalPot,
+      players: gameFormData.players,
+      createdLocally: true,
+      date: new Date().toISOString()
+    };
+
     try {
       console.log("Creating game with data:", JSON.stringify(gameFormData));
       
@@ -975,88 +994,21 @@ export default function Games() {
   const activeGame = activeGameId ? games.find(g => g.id === activeGameId) : null;
   
   // Format game data from Supabase
-  const formatGameData = (game: any) => {
-    // Parse wager amount from the game name if it follows our format
-    let customData: { name: string; wagerAmount: number; } | undefined = undefined;
-    
-    if (game.name && game.name.includes('(Entry: $')) {
-      try {
-        const nameMatch = game.name.match(/(.*) \(Entry: \$(\d+(\.\d+)?)\)/);
-        if (nameMatch) {
-          const baseName = nameMatch[1];
-          const wagerAmount = parseFloat(nameMatch[2]);
-          
-          customData = {
-            name: baseName,
-            wagerAmount: wagerAmount
-          };
-        }
-      } catch (e) {
-        console.error("Error parsing game name for wager:", e);
-      }
-    }
-    
-    // Convert players object to array format that the UI expects
-    let players = [];
-    try {
-      if (game.players) {
-        // Handle different player formats
-        if (typeof game.players === 'string') {
-          // If it's a string, parse it first
-          try {
-            const parsedData = JSON.parse(game.players);
-            if (Array.isArray(parsedData)) {
-              players = parsedData;
-            } else if (typeof parsedData === 'object') {
-              // Convert object format to array format
-              players = Object.entries(parsedData).map(([id, data]) => ({
-                id,
-                name: (data as any).name,
-                bet: (data as any).bet
-              }));
-            }
-          } catch (e) {
-            console.error("Error parsing players string:", e);
-            players = []; // Reset to empty array on error
-          }
-        } else if (Array.isArray(game.players)) {
-          // If it's already an array, use it directly
-          players = game.players;
-        } else if (typeof game.players === 'object' && game.players !== null) {
-          // If it's an object (new format), convert to array
-          players = Object.entries(game.players).map(([id, data]) => ({
-            id,
-            name: (data as any).name,
-            bet: (data as any).bet
-          }));
-        }
-      }
-      
-      // Ensure each player has id, name, and bet properties
-      players = players.map((player: any) => ({
-        id: player.id || `player-${Math.random().toString(36).substring(2, 9)}`,
-        name: player.name || 'Unknown Player',
-        bet: typeof player.bet === 'number' ? player.bet : 0
-      }));
-    } catch (e) {
-      console.error("Error processing players:", e);
-      players = [];
-    }
-    
+  const formatGameData = (game: Partial<Game>): Game => {
     return {
-      id: game.id,
-      name: game.name,
-      type: game.type,
-      date: new Date(game.startTime).toLocaleDateString(),
-      startTime: game.startTime,
+      id: game.id || '',
+      name: game.name || '',
+      type: game.type || '',
+      date: game.date || new Date().toISOString(),
+      startTime: game.startTime || Date.now(),
       endTime: game.endTime,
-      players: players, // This is now guaranteed to be an array
+      players: game.players || [],
       totalPot: game.totalPot || 0,
       status: game.status || 'active',
       winner: game.winner,
       notes: game.notes,
       winMethod: game.winMethod,
-      customData
+      customData: game.customData
     };
   };
   
