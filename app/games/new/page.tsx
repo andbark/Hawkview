@@ -210,9 +210,9 @@ function NewGameForm() {
           name: formData.name,
           type: 'other', // Default type since we removed the type selection
           status: 'active',
-          total_pot: formData.initialPlayers.reduce((sum, p) => sum + p.buyIn, 0),
-          start_time: Date.now(),
-          created_at: new Date().toISOString()
+          startTime: Date.now(),
+          totalPot: formData.initialPlayers.reduce((sum, p) => sum + p.buyIn, 0),
+          players: {}  // Empty JSONB object as per schema
         })
         .select();
         
@@ -224,9 +224,9 @@ function NewGameForm() {
           name: formData.name,
           type: 'other',
           status: 'active',
-          total_pot: formData.initialPlayers.reduce((sum, p) => sum + p.buyIn, 0),
-          start_time: Date.now(),
-          created_at: new Date().toISOString()
+          startTime: Date.now(),
+          totalPot: formData.initialPlayers.reduce((sum, p) => sum + p.buyIn, 0),
+          players: {}
         });
         return;
       }
@@ -249,10 +249,10 @@ function NewGameForm() {
         const { error: participantError } = await db
           .from('game_participants')
           .insert({
-            game_id: gameId,
-            player_id: player.playerId,
-            buy_in_amount: player.buyIn,
-            joined_at: new Date().toISOString()
+            gameId: gameId,
+            playerId: player.playerId,
+            buyInAmount: player.buyIn,
+            joinedAt: new Date().toISOString()
           });
           
         if (participantError) {
@@ -265,10 +265,10 @@ function NewGameForm() {
         const { error: transactionError } = await db
           .from('transactions')
           .insert({
-            player_id: player.playerId,
+            playerId: player.playerId,
             amount: -player.buyIn, // Negative because player is spending money
             type: 'bet',
-            game_id: gameId,
+            gameId: gameId,
             timestamp: Date.now(),
             description: `Buy-in for ${formData.name}`
           });
